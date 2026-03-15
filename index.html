@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Flo ist IN!</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:Inter,sans-serif;}
 body{color:white;overflow-x:hidden;cursor:none;}
@@ -557,26 +559,41 @@ lightbox.onclick=()=>lightbox.style.display="none";
 /* ──────────────────────────────
    GUESTBOOK
 ────────────────────────────── */
-let messages=JSON.parse(localStorage.getItem("messages"))||[];
-function renderMessages(){
+const fbApp=firebase.initializeApp({
+  apiKey:"AIzaSyBRn2elJgIMnNS30OWRpNmfSXF5ttbTNjg",
+  authDomain:"flo-in.firebaseapp.com",
+  databaseURL:"https://flo-in-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:"flo-in",
+  storageBucket:"flo-in.firebasestorage.app",
+  messagingSenderId:"363519740894",
+  appId:"1:363519740894:web:7954cc5515fa8a1bb76b4f"
+});
+const db=firebase.database();
+const messagesRef=db.ref("guestbook");
+
+function renderMessages(msgs){
   const c=document.getElementById("messages");c.innerHTML="";
-  messages.forEach(m=>{
+  msgs.forEach(m=>{
     const d=document.createElement("div");d.className="message";
     d.innerHTML="<b>"+m.name+"</b>: "+m.text+"<div class='timestamp'>"+fmtTime(m.time)+"</div>";
     c.appendChild(d);
   });
   c.scrollTop=c.scrollHeight;
 }
+
+messagesRef.orderByChild("time").on("value",snap=>{
+  const msgs=[];
+  snap.forEach(child=>msgs.push(child.val()));
+  renderMessages(msgs);
+});
+
 function postMessage(){
   const name=document.getElementById("nameGB").value;
   const text=document.getElementById("messageGB").value;
   if(!name.trim()||!text.trim()) return;
-  messages.push({name,text,time:Date.now()});
-  localStorage.setItem("messages",JSON.stringify(messages));
+  messagesRef.push({name,text,time:Date.now()});
   document.getElementById("messageGB").value="";
-  renderMessages();
 }
-renderMessages();
 
 /* MOBILE CHAT TOGGLE */
 function gbToggle(){
@@ -586,7 +603,6 @@ function gbToggle(){
   const isOpen=gb.classList.contains("mobile-open");
   gb.classList.toggle("mobile-open");
   document.body.classList.toggle("chat-open",!isOpen);
-  if(!isOpen) renderMessages();
 }
 
 /* ──────────────────────────────
