@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flo ist IN!</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Inter,sans-serif;}
+body{color:white;overflow-x:hidden;cursor:none;}
+#bg{position:fixed;top:0;left:0;width:100%;height:100%;background:url("https://images.unsplash.com/photo-1502082553048-f009c37129b9?q=80&w=1920") center/cover;filter:blur(6px);transform:scale(1.1);z-index:-2;}
+#overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.25);z-index:-1;}
+#cursor-canvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;}
+nav{position:fixed;top:0;width:100%;display:flex;justify-content:space-between;align-items:center;padding:18px 40px;background:rgba(0,0,0,0.35);backdrop-filter:blur(6px);}
+nav a{color:white;text-decoration:none;margin-left:25px;font-weight:600;}
+nav a:hover{opacity:0.7;}
+header{height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:20px;}
+header h1{font-size:3.8em;margin-bottom:10px;}
+header p{font-size:1.2em;max-width:800px;}
+section{padding:90px 40px;max-width:1100px;margin:auto;}
+section h2{font-size:2.2em;margin-bottom:20px;}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:25px;}
+.card{background:rgba(0,0,0,0.5);padding:20px;border-radius:12px;transition:0.3s;}
+.card:hover{transform:translateY(-6px);}
+#gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px;}
+#gallery img{width:100%;border-radius:10px;cursor:none;transition:0.3s;}
+#gallery img:hover{transform:scale(1.05);}
+#lightbox{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);justify-content:center;align-items:center;z-index:2000;}
+#lightbox img{max-width:90%;max-height:90%;border-radius:10px;}
+
+/* CHATBOX */
+#guestbook{position:fixed;bottom:20px;right:20px;width:320px;height:280px;min-width:200px;min-height:180px;background:rgba(0,0,0,0.65);border-radius:10px;padding:10px;overflow:hidden;cursor:none;display:flex;flex-direction:column;gap:6px;user-select:none;}
+#gb-resize-handle{position:absolute;bottom:0;right:0;width:18px;height:18px;cursor:nwse-resize;z-index:10;}
+#gb-resize-handle::before{content:"";position:absolute;bottom:4px;right:4px;width:10px;height:10px;border-right:2px solid rgba(255,255,255,0.5);border-bottom:2px solid rgba(255,255,255,0.5);border-radius:1px;}
+#messages{flex:1;overflow-y:auto;min-height:0;}
+.message{background:rgba(255,255,255,0.15);padding:6px;margin-bottom:6px;border-radius:6px;}
+.timestamp{font-size:0.7em;opacity:0.7;}
+#gb-inputs{display:flex;flex-direction:column;gap:4px;flex-shrink:0;}
+#gb-inputs input,#gb-inputs textarea{width:100%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:6px;color:white;padding:5px 8px;font-size:0.85em;resize:none;}
+#gb-inputs textarea{height:42px;}
+#gb-inputs button{padding:5px;border:none;border-radius:6px;background:rgba(255,255,255,0.2);color:white;cursor:none;font-weight:600;}
+#gb-inputs button:hover{background:rgba(255,255,255,0.35);}
+
+/* FLAG GAME */
+#flagGame{text-align:center;}
+#flagImg{margin:15px auto;display:block;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.5);max-width:260px;width:100%;}
+#answers{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:480px;margin:10px auto;}
+#flagGame button.answer-btn{padding:10px 14px;border:2px solid rgba(255,255,255,0.2);border-radius:8px;cursor:none;background:rgba(0,0,0,0.4);color:white;font-size:0.95em;transition:background 0.2s,border-color 0.2s;}
+#flagGame button.answer-btn:hover{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.5);}
+#flagGame button.answer-btn.correct{background:rgba(50,200,80,0.5);border-color:#32c850;}
+#flagGame button.answer-btn.wrong{background:rgba(220,50,50,0.5);border-color:#dc3232;}
+#flag-controls{display:flex;justify-content:center;align-items:center;gap:15px;margin-top:12px;flex-wrap:wrap;}
+#flag-controls select{padding:8px 12px;border-radius:6px;border:none;background:rgba(0,0,0,0.5);color:white;cursor:none;}
+#flag-controls button{padding:10px 18px;border:none;border-radius:6px;cursor:none;background:rgba(255,255,255,0.2);color:white;font-weight:600;transition:background 0.2s;}
+#flag-controls button:hover{background:rgba(255,255,255,0.35);}
+#flag-stats{display:flex;justify-content:center;gap:20px;margin-top:14px;font-size:0.95em;}
+#flag-feedback{min-height:24px;font-size:1em;font-weight:600;margin-top:8px;}
+#flag-leaderboard{margin:18px auto 0;max-width:340px;background:rgba(0,0,0,0.4);border-radius:12px;padding:14px 18px;}
+#flag-leaderboard h3{font-size:1em;margin-bottom:10px;opacity:0.9;letter-spacing:0.04em;}
+.lb-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.08);}
+.lb-row:last-child{border-bottom:none;}
+.lb-rank{font-size:1.3em;width:28px;text-align:center;}
+.lb-name{flex:1;font-weight:600;}
+.lb-score{font-size:1.1em;font-weight:700;color:#ffe066;}
+.lb-empty{opacity:0.4;font-size:0.9em;text-align:center;padding:8px 0;}
+
+/* NAME MODAL */
+#name-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:5000;justify-content:center;align-items:center;}
+#name-modal.open{display:flex;}
+#name-modal-box{background:#1a1a2e;border:1px solid rgba(255,255,255,0.15);border-radius:14px;padding:28px 32px;min-width:300px;text-align:center;}
+#name-modal-box h3{margin-bottom:12px;font-size:1.4em;}
+#name-modal-box input{width:100%;padding:9px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:white;font-size:1em;margin-bottom:12px;}
+#name-modal-box button{padding:9px 24px;border:none;border-radius:8px;background:#ffe066;color:#1a1a2e;font-weight:700;cursor:none;font-size:1em;}
+
+/* FLAPPY */
+#flappySection{text-align:center;}
+#flappy-wrap{position:relative;display:inline-block;margin-top:16px;border-radius:16px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,0.6);}
+#flappyCanvas{display:block;cursor:none;}
+#flappy-overlay{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;background:rgba(0,0,0,0.52);font-size:1.1em;gap:10px;}
+#flappy-overlay h3{font-size:1.8em;margin:0;}
+#flappy-overlay button{padding:10px 26px;border:none;border-radius:8px;background:rgba(255,255,255,0.25);color:white;font-size:1em;font-weight:700;cursor:none;transition:background 0.2s;}
+#flappy-overlay button:hover{background:rgba(255,255,255,0.45);}
+
+/* WORLD MAP */
+#mapSection{text-align:center;}
+#world-map-wrap{
+  position:relative;margin:0 auto;max-width:900px;
+  border-radius:14px;overflow:hidden;
+  box-shadow:0 6px 32px rgba(0,0,0,0.55);
+  background:linear-gradient(180deg,#0a2744 0%,#0d3566 40%,#0a4a7c 100%);
+}
+#worldMapSvg{width:100%;height:auto;display:block;}
+/* ocean = fill on root rect */
+#worldMapSvg .land{fill:#2d6a2d;stroke:#3d8a3d;stroke-width:0.4;}
+#worldMapSvg .land:hover{fill:#3a8a3a;}
+.map-dot{
+  position:absolute;width:11px;height:11px;border-radius:50%;
+  background:#ffe066;
+  box-shadow:0 0 0 3px rgba(255,224,102,0.3),0 0 12px rgba(255,224,102,0.7);
+  transform:translate(-50%,-50%);pointer-events:none;
+  animation:pulse-dot 2.2s infinite;
+}
+@keyframes pulse-dot{
+  0%,100%{box-shadow:0 0 0 3px rgba(255,224,102,0.3),0 0 12px rgba(255,224,102,0.7);}
+  50%{box-shadow:0 0 0 8px rgba(255,224,102,0.06),0 0 22px rgba(255,224,102,0.9);}
+}
+#map-visitor-list{margin-top:12px;font-size:0.88em;opacity:0.75;}
+#map-add-btn{margin-top:14px;padding:9px 20px;border:none;border-radius:8px;background:rgba(255,255,255,0.18);color:white;font-weight:600;cursor:none;transition:background 0.2s;}
+#map-add-btn:hover{background:rgba(255,255,255,0.32);}
+#map-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:5000;justify-content:center;align-items:center;}
+#map-modal.open{display:flex;}
+#map-modal-box{background:#1a1a2e;border:1px solid rgba(255,255,255,0.15);border-radius:14px;padding:28px 32px;min-width:300px;text-align:center;}
+#map-modal-box h3{margin-bottom:12px;}
+#map-modal-box input{width:100%;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:white;font-size:1em;margin-bottom:10px;}
+#map-modal-box button{padding:9px 20px;border:none;border-radius:8px;background:#ffe066;color:#1a1a2e;font-weight:700;cursor:none;font-size:1em;margin:4px;}
+#map-modal-box .btn-cancel{background:rgba(255,255,255,0.1);color:white;}
+
+/* DEV MENU */
+#dev-menu{display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:8000;background:rgba(0,0,0,0.94);flex-direction:column;font-family:'Courier New',monospace;overflow:auto;}
+#dev-menu.open{display:flex;}
+#dev-header{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid #00ff41;background:#020d02;flex-shrink:0;}
+#dev-header span{color:#00ff41;font-size:1em;letter-spacing:0.08em;}
+#dev-close{background:none;border:1px solid #00ff41;color:#00ff41;padding:4px 14px;cursor:none;font-family:inherit;font-size:0.9em;border-radius:4px;}
+#dev-body{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));flex:1;}
+.dev-panel{padding:22px 26px;border-right:1px solid #0a1f0a;border-bottom:1px solid #0a1f0a;}
+.dev-panel h4{color:#00ff41;font-size:0.78em;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:14px;padding-bottom:6px;border-bottom:1px solid #0f2f0f;}
+.dev-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:0.82em;color:#aaffaa;border-bottom:1px solid #081808;}
+.dev-row:last-child{border-bottom:none;}
+.dev-row span:last-child{color:#00ff41;font-weight:bold;text-align:right;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.dev-tag{display:inline-block;padding:2px 7px;border-radius:3px;font-size:0.75em;font-family:'Courier New',monospace;background:rgba(0,255,65,0.1);border:1px solid #00ff41;color:#00ff41;margin-top:4px;}
+.dev-toggle-btn{padding:3px 10px;border:1px solid #00ff41;background:none;color:#00ff41;font-family:inherit;font-size:0.78em;cursor:none;border-radius:3px;transition:background 0.15s;}
+.dev-toggle-btn:hover{background:rgba(0,255,65,0.15);}
+.dev-theme-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
+.dev-theme-btn{padding:5px 10px;border:1px solid #00ff41;background:none;color:#00ff41;font-family:inherit;font-size:0.78em;cursor:none;border-radius:3px;transition:background 0.15s;}
+.dev-theme-btn:hover{background:rgba(0,255,65,0.15);}
+#dev-hint{position:fixed;bottom:8px;left:50%;transform:translateX(-50%);font-size:0.7em;opacity:0.28;pointer-events:none;font-family:'Courier New',monospace;letter-spacing:0.06em;}
+
+#confettiCanvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;}
+</style>
+</head>
+<body>
+<div id="bg"></div>
+<div id="overlay"></div>
+<canvas id="confettiCanvas"></canvas>
+<canvas id="cursor-canvas"></canvas>
+<div id="dev-hint">[ STRG + SHIFT + D → Dev-Menü ]</div>
+
+<nav>
+  <div>flo.in</div>
+  <div>
+    <a href="#about">Guide</a>
+    <a href="#gallery-section">Fotos</a>
+    <a href="#flagGame">Flaggen</a>
+    <a href="#flappySection">Flappy</a>
+    <a href="#mapSection">Karte</a>
+  </div>
+</nav>
+
+<header>
+  <h1>Flo ist IN!</h1>
+  <p>Willkommen in Flo's kleiner Ecke. Viel Spaß beim erkunden! </p>
+</header>
+
+<section id="about">
+  <h2>Specials</h2>
+  <div class="cards">
+    <div class="card"><h3>Chatbox</h3><p>Ich freu mich über Nachrichten im Gästebuch und teilt gerne Eure Ideen mit!</p></div>
+    <div class="card"><h3>Mini-Games</h3><p>Gut in der Schule aufgepasst? Oder schnelle Finger? Beweist euch und schafft es auf die Rangliste!</p></div>
+    <div class="card"><h3>Secrets</h3><p>Die Website ist mit vielen easter-eggs beschmückt. Fragt euren Kontakt des Vertrauens oder findet sie selbst heraus!</p></div>
+  </div>
+</section>
+
+<section id="gallery-section">
+  <h2>Fotogalerie</h2>
+  <div id="gallery">
+    <img src="IMG_1 Large.jpeg"><img src="IMG_2 Large.jpeg"><img src="IMG_3 Large.jpeg">
+    <img src="IMG_4 Large.jpeg"><img src="IMG_5 Large.jpeg"><img src="IMG_6 Large.jpeg">
+    <img src="IMG_7 Large.jpeg"><img src="IMG_8 Large.jpeg"><img src="IMG_9 Large.jpeg">
+  </div>
+</section>
+<div id="lightbox"><img id="lightbox-img"></div>
+
+<!-- FLAG GAME -->
+<section id="flagGame">
+  <h2>Flaggen Quiz</h2>
+  <img id="flagImg" width="260" alt="Flagge">
+  <div id="answers"></div>
+  <div id="flag-feedback"></div>
+  <div id="flag-stats"><span>Score: <b id="score">0</b></span></div>
+  <div id="flag-controls">
+    <select id="difficulty">
+      <option value="easy">Leicht (6 Länder)</option>
+      <option value="medium" selected>Mittel (30 Länder)</option>
+      <option value="hard">Schwer (80 Länder)</option>
+    </select>
+    <button onclick="nextFlag()">Nächste Flagge ▶</button>
+  </div>
+  <div id="flag-leaderboard">
+    <h3>🏆 Top 3 Rangliste</h3>
+    <div id="lb-rows"></div>
+  </div>
+</section>
+
+<!-- NAME MODAL -->
+<div id="name-modal">
+  <div id="name-modal-box">
+    <h3 id="name-modal-title">Runde beendet!</h3>
+    <p id="name-modal-sub" style="margin-bottom:12px;opacity:0.75;font-size:0.9em;"></p>
+    <input id="name-modal-input" placeholder="Dein Name" maxlength="20">
+    <br><button onclick="nameModalConfirm()">Speichern ✓</button>
+  </div>
+</div>
+
+<!-- FLAPPY PLANE -->
+<section id="flappySection">
+  <h2>✈️ Flappy Plane</h2>
+  <p style="opacity:0.7;margin-bottom:8px;">Klick ins Spielfeld oder Leertaste zum Fliegen</p>
+  <div id="flappy-wrap">
+    <canvas id="flappyCanvas" width="400" height="500"></canvas>
+    <div id="flappy-overlay">
+      <h3>✈️ Flappy Plane</h3>
+      <p>Durch die Wolken fliegen!</p>
+      <button onclick="flappyStart()">Starten ▶</button>
+      <div id="flappy-hs-display" style="font-size:0.82em;opacity:0.75;margin-top:4px;"></div>
+    </div>
+  </div>
+</section>
+
+<!-- WORLD MAP -->
+<section id="mapSection">
+  <h2>Besucher-Weltkarte</h2>
+  <p style="opacity:0.7;margin-bottom:16px;">Trag ein, wo du herkommst! PS: Die Karte wurde von Tiffy erstellt...</p>
+  <div id="world-map-wrap">
+    <!--
+      Natural Earth–style simplified world map.
+      ViewBox 0 0 2000 1001 — equirectangular projection.
+      Coordinates hand-derived from Natural Earth data (simplified).
+    -->
+    <svg id="worldMapSvg" viewBox="0 0 2000 1001" xmlns="http://www.w3.org/2000/svg">
+      <!-- Ocean background -->
+      <rect width="2000" height="1001" fill="#0a2e52"/>
+      <!-- Graticule (subtle grid) -->
+      <g stroke="#0d3b6e" stroke-width="0.6" fill="none">
+        <line x1="0" y1="250" x2="2000" y2="250"/>
+        <line x1="0" y1="500" x2="2000" y2="500"/>
+        <line x1="0" y1="750" x2="2000" y2="750"/>
+        <line x1="500" y1="0" x2="500" y2="1001"/>
+        <line x1="1000" y1="0" x2="1000" y2="1001"/>
+        <line x1="1500" y1="0" x2="1500" y2="1001"/>
+      </g>
+
+      <!-- ── NORTH AMERICA ── -->
+      <path class="land" d="
+        M 310,80 L 340,70 L 380,72 L 420,80 L 450,95 L 470,115 L 475,140
+        L 465,165 L 450,175 L 440,200 L 420,215 L 400,225 L 385,240
+        L 370,255 L 360,270 L 345,280 L 330,275 L 315,260 L 300,245
+        L 285,230 L 270,215 L 260,200 L 255,180 L 250,160 L 252,140
+        L 258,120 L 270,100 L 290,88 Z
+      "/>
+      <!-- Alaska -->
+      <path class="land" d="M 210,90 L 240,80 L 265,88 L 270,100 L 258,110 L 235,108 L 215,102 Z"/>
+      <!-- Greenland -->
+      <path class="land" d="M 430,30 L 480,22 L 520,28 L 535,48 L 530,70 L 510,82 L 485,85 L 460,78 L 440,62 L 430,45 Z"/>
+      <!-- Central America -->
+      <path class="land" d="M 340,280 L 360,270 L 370,285 L 365,305 L 350,315 L 335,305 L 332,290 Z"/>
+      <!-- Cuba -->
+      <path class="land" d="M 355,295 L 380,290 L 390,298 L 380,308 L 358,305 Z"/>
+
+      <!-- ── SOUTH AMERICA ── -->
+      <path class="land" d="
+        M 390,330 L 420,318 L 455,320 L 480,335 L 500,355 L 510,380
+        L 515,410 L 510,445 L 500,475 L 485,505 L 465,525 L 445,535
+        L 425,530 L 408,515 L 395,490 L 385,460 L 380,430 L 380,400
+        L 383,370 Z
+      "/>
+
+      <!-- ── EUROPE ── -->
+      <path class="land" d="
+        M 880,80 L 920,72 L 960,75 L 990,85 L 1010,100 L 1015,118
+        L 1005,132 L 990,140 L 975,148 L 955,152 L 935,148 L 915,140
+        L 898,128 L 885,112 L 878,96 Z
+      "/>
+      <!-- Iberian peninsula -->
+      <path class="land" d="M 840,145 L 870,135 L 895,140 L 898,158 L 885,175 L 862,180 L 840,168 L 832,155 Z"/>
+      <!-- British Isles -->
+      <path class="land" d="M 838,90 L 858,82 L 872,90 L 868,108 L 850,114 L 835,105 Z"/>
+      <path class="land" d="M 820,98 L 834,93 L 836,106 L 823,110 Z"/>
+      <!-- Scandinavia -->
+      <path class="land" d="M 920,48 L 945,38 L 965,42 L 978,60 L 972,80 L 955,88 L 938,85 L 922,70 L 916,56 Z"/>
+      <!-- Italy -->
+      <path class="land" d="M 935,148 L 955,152 L 965,168 L 962,188 L 952,202 L 938,205 L 928,192 L 925,175 L 928,158 Z"/>
+      <!-- Sicily -->
+      <path class="land" d="M 940,210 L 955,206 L 960,215 L 950,222 L 938,218 Z"/>
+      <!-- Greece -->
+      <path class="land" d="M 990,168 L 1005,162 L 1012,175 L 1008,188 L 994,192 L 984,180 Z"/>
+
+      <!-- ── AFRICA ── -->
+      <path class="land" d="
+        M 878,210 L 920,200 L 960,198 L 1000,205 L 1030,220 L 1048,245
+        L 1052,275 L 1048,310 L 1038,345 L 1022,380 L 1000,415 L 975,445
+        L 950,465 L 925,475 L 900,470 L 878,455 L 860,430 L 848,400
+        L 842,365 L 840,330 L 842,295 L 848,260 L 858,232 Z
+      "/>
+      <!-- Madagascar -->
+      <path class="land" d="M 1058,370 L 1072,358 L 1082,368 L 1082,395 L 1072,410 L 1058,402 L 1050,385 Z"/>
+
+      <!-- ── MIDDLE EAST ── -->
+      <path class="land" d="M 1050,195 L 1080,188 L 1105,192 L 1115,210 L 1110,228 L 1090,235 L 1065,230 L 1050,215 Z"/>
+      <!-- Arabian Peninsula -->
+      <path class="land" d="
+        M 1090,235 L 1120,228 L 1148,235 L 1162,255 L 1160,280
+        L 1148,300 L 1125,308 L 1102,300 L 1088,280 L 1085,258 Z
+      "/>
+
+      <!-- ── ASIA (main body) ── -->
+      <path class="land" d="
+        M 1010,72 L 1060,60 L 1120,52 L 1200,48 L 1280,50 L 1360,55
+        L 1420,62 L 1470,72 L 1510,85 L 1530,100 L 1528,118
+        L 1510,132 L 1488,145 L 1462,155 L 1435,162 L 1405,165
+        L 1375,162 L 1345,158 L 1310,155 L 1275,155 L 1242,158
+        L 1212,162 L 1185,165 L 1162,168 L 1140,172 L 1115,178
+        L 1092,185 L 1068,188 L 1048,188 L 1028,182 L 1012,170
+        L 1005,155 L 1006,138 L 1010,120 L 1010,100 Z
+      "/>
+      <!-- India subcontinent -->
+      <path class="land" d="
+        M 1192,188 L 1222,182 L 1248,188 L 1260,205 L 1262,228
+        L 1255,255 L 1240,275 L 1220,285 L 1198,278 L 1182,258
+        L 1178,235 L 1182,210 Z
+      "/>
+      <!-- Sri Lanka -->
+      <path class="land" d="M 1232,292 L 1242,286 L 1248,296 L 1240,308 L 1228,302 Z"/>
+      <!-- Southeast Asia mainland -->
+      <path class="land" d="
+        M 1390,168 L 1425,162 L 1450,170 L 1460,190 L 1452,210
+        L 1432,222 L 1408,218 L 1390,205 L 1385,188 Z
+      "/>
+      <!-- Malay Peninsula + Singapore -->
+      <path class="land" d="M 1428,222 L 1440,218 L 1445,232 L 1442,250 L 1430,258 L 1420,248 L 1418,232 Z"/>
+      <!-- Borneo -->
+      <path class="land" d="M 1455,248 L 1488,238 L 1510,248 L 1515,270 L 1505,292 L 1480,300 L 1458,290 L 1448,270 L 1450,252 Z"/>
+      <!-- Java/Sumatra -->
+      <path class="land" d="M 1390,272 L 1435,262 L 1462,268 L 1465,280 L 1432,285 L 1395,282 Z"/>
+      <path class="land" d="M 1468,278 L 1510,272 L 1530,280 L 1525,292 L 1490,295 L 1465,290 Z"/>
+      <!-- Philippines -->
+      <path class="land" d="M 1498,198 L 1514,190 L 1522,202 L 1515,218 L 1500,215 Z"/>
+      <!-- Japan -->
+      <path class="land" d="M 1555,118 L 1575,108 L 1590,115 L 1590,132 L 1575,142 L 1558,135 Z"/>
+      <path class="land" d="M 1572,148 L 1590,138 L 1602,145 L 1598,162 L 1580,168 L 1565,158 Z"/>
+      <!-- Taiwan -->
+      <path class="land" d="M 1518,188 L 1530,182 L 1538,192 L 1530,205 L 1518,200 Z"/>
+      <!-- Korean Peninsula -->
+      <path class="land" d="M 1528,118 L 1548,112 L 1558,122 L 1552,140 L 1535,145 L 1524,135 Z"/>
+
+      <!-- ── RUSSIA / SIBERIA ── (simplified top band) -->
+      <path class="land" d="
+        M 1010,72 L 1060,60 L 1120,52 L 1200,48 L 1280,50 L 1360,55
+        L 1420,62 L 1490,58 L 1560,55 L 1620,52 L 1680,50 L 1740,52
+        L 1780,58 L 1800,68 L 1790,85 L 1760,95 L 1710,100 L 1660,102
+        L 1600,100 L 1540,98 L 1490,95 L 1440,88 L 1390,85 L 1330,82
+        L 1260,78 L 1190,75 L 1130,72 L 1070,72 Z
+      "/>
+      <!-- Kamchatka -->
+      <path class="land" d="M 1752,88 L 1778,78 L 1790,88 L 1785,108 L 1768,115 L 1752,105 Z"/>
+      <!-- Sakhalin -->
+      <path class="land" d="M 1598,88 L 1610,80 L 1618,90 L 1612,110 L 1598,112 Z"/>
+
+      <!-- ── CENTRAL ASIA ── -->
+      <path class="land" d="
+        M 1120,145 L 1162,138 L 1200,138 L 1232,142 L 1250,155
+        L 1245,172 L 1212,178 L 1178,178 L 1148,175 L 1120,168 L 1108,155 Z
+      "/>
+
+      <!-- ── AUSTRALIA ── -->
+      <path class="land" d="
+        M 1495,540 L 1540,525 L 1590,522 L 1638,528 L 1678,542
+        L 1708,562 L 1722,588 L 1720,618 L 1705,645 L 1680,665
+        L 1648,678 L 1612,682 L 1575,678 L 1540,665 L 1510,645
+        L 1490,618 L 1482,588 L 1485,560 Z
+      "/>
+      <!-- Tasmania -->
+      <path class="land" d="M 1618,690 L 1635,682 L 1648,690 L 1645,708 L 1628,715 L 1615,705 Z"/>
+      <!-- New Zealand North -->
+      <path class="land" d="M 1748,650 L 1765,638 L 1778,648 L 1775,670 L 1758,678 L 1745,665 Z"/>
+      <!-- New Zealand South -->
+      <path class="land" d="M 1738,680 L 1755,672 L 1768,682 L 1762,708 L 1742,718 L 1728,705 L 1728,690 Z"/>
+      <!-- Papua New Guinea -->
+      <path class="land" d="M 1548,478 L 1588,468 L 1622,472 L 1638,488 L 1628,505 L 1600,510 L 1568,505 L 1548,492 Z"/>
+
+      <!-- ── EAST ASIA (China/Mongolia) ── -->
+      <path class="land" d="
+        M 1310,98 L 1375,88 L 1440,88 L 1488,95 L 1510,110
+        L 1505,130 L 1488,145 L 1462,155 L 1430,162 L 1390,165
+        L 1350,162 L 1310,155 L 1278,152 L 1252,158 L 1235,172
+        L 1218,185 L 1195,188 L 1172,185 L 1152,178 L 1135,165
+        L 1128,148 L 1135,132 L 1155,120 L 1185,110 L 1225,102
+        L 1268,96 Z
+      "/>
+
+      <!-- ── ICELAND ── -->
+      <path class="land" d="M 778,62 L 806,52 L 828,58 L 832,75 L 815,88 L 790,88 L 774,76 Z"/>
+
+      <!-- ── CARIBBEAN islands (tiny) ── -->
+      <path class="land" d="M 388,300 L 398,296 L 405,304 L 396,312 L 385,308 Z"/>
+    </svg>
+    <!-- Visitor dots injected by JS -->
+  </div>
+  <div id="map-visitor-list"></div>
+  <button id="map-add-btn" onclick="openMapModal()">📍 Ich war hier!</button>
+</section>
+
+<!-- MAP MODAL -->
+<div id="map-modal">
+  <div id="map-modal-box">
+    <h3>📍 Standort eintragen</h3>
+    <p style="font-size:0.85em;opacity:0.7;margin-bottom:12px;">Wo kommst du her?</p>
+    <input id="map-name-in" placeholder="Dein Name" maxlength="20">
+    <input id="map-city-in" placeholder="Stadt (z.B. Berlin, Paris, Tokyo…)" maxlength="30">
+    <p id="map-city-hint" style="font-size:0.75em;opacity:0.5;margin-bottom:8px;"></p>
+    <button onclick="mapModalConfirm()">Eintragen ✓</button>
+    <button class="btn-cancel" onclick="closeMapModal()">Abbrechen</button>
+  </div>
+</div>
+
+<!-- CHAT -->
+<div id="guestbook">
+  <div id="gb-resize-handle"></div>
+  <div id="messages"></div>
+  <div id="gb-inputs">
+    <input id="nameGB" placeholder="Name">
+    <textarea id="messageGB" placeholder="Nachricht"></textarea>
+    <button onclick="postMessage()">Absenden</button>
+  </div>
+</div>
+
+<!-- DEV MENU -->
+<div id="dev-menu">
+  <div id="dev-header">
+    <span>⚡ DEV CONSOLE — meine-seite.local</span>
+    <button id="dev-close" onclick="closeDev()">[ ESC ] Schließen</button>
+  </div>
+  <div id="dev-body">
+    <!-- Panel 1: Stats -->
+    <div class="dev-panel">
+      <h4>📊 Seiten-Stats</h4>
+      <div class="dev-row"><span>localStorage Keys</span><span id="dv-lskeys">—</span></div>
+      <div class="dev-row"><span>Gästebuch Einträge</span><span id="dv-msgs">—</span></div>
+      <div class="dev-row"><span>Flag #1 Highscore</span><span id="dv-flaghs">—</span></div>
+      <div class="dev-row"><span>Flappy Highscore</span><span id="dv-flappy">—</span></div>
+      <div class="dev-row"><span>Besucher-Pins</span><span id="dv-pins">—</span></div>
+      <div class="dev-row"><span>Viewport</span><span id="dv-vp">—</span></div>
+      <div class="dev-row"><span>Online</span><span id="dv-online">—</span></div>
+      <div class="dev-row"><span>Sprache</span><span id="dv-lang">—</span></div>
+      <div class="dev-row"><span>Plattform</span><span id="dv-plat">—</span></div>
+      <div class="dev-row"><span>Speicher genutzt</span><span id="dv-storage">—</span></div>
+    </div>
+    <!-- Panel 2: Settings -->
+    <div class="dev-panel">
+      <h4>🔧 Einstellungen</h4>
+      <div class="dev-row"><span>Cursor-Trail</span><span><button class="dev-toggle-btn" onclick="devToggleTrail()">Toggle</button></span></div>
+      <div class="dev-row"><span>Dev-Hinweis</span><span><button class="dev-toggle-btn" onclick="devToggleHint()">Toggle</button></span></div>
+      <div class="dev-row"><span>Hintergrund Blur</span><span><button class="dev-toggle-btn" onclick="devToggleBlur()">Toggle</button></span></div>
+      <div class="dev-row"><span>Konfetti</span><span><button class="dev-toggle-btn" onclick="startConfetti()">Starten 🎊</button></span></div>
+      <br>
+      <h4 style="margin-top:8px;">🎨 Hintergrund-Filter</h4>
+      <div class="dev-theme-row">
+        <button class="dev-theme-btn" onclick="setBgFilter('blur(6px)')">Normal</button>
+        <button class="dev-theme-btn" onclick="setBgFilter('blur(6px) grayscale(1)')">Graustufen</button>
+        <button class="dev-theme-btn" onclick="setBgFilter('blur(6px) hue-rotate(180deg) saturate(2)')">Hue-Shift</button>
+        <button class="dev-theme-btn" onclick="setBgFilter('blur(6px) sepia(0.8)')">Sepia</button>
+        <button class="dev-theme-btn" onclick="setBgFilter('blur(6px) invert(0.85)')">Invertiert</button>
+        <button class="dev-theme-btn" onclick="setBgFilter('blur(0px)')">Kein Blur</button>
+      </div>
+    </div>
+    <!-- Panel 3: Sessions -->
+    <div class="dev-panel">
+      <h4>🗃️ Datenspeicher</h4>
+      <div class="dev-row"><span>Flag Rangliste</span><span id="dv-lb">—</span></div>
+      <div class="dev-row"><span>Letzte Nachricht</span><span id="dv-lastmsg">—</span></div>
+      <div class="dev-row"><span>Letzter Besucher</span><span id="dv-lastpin">—</span></div>
+      <br>
+      <h4 style="margin-top:8px;">📋 Gespeicherte Keys</h4>
+      <div id="dv-ls-list" style="font-size:0.76em;color:#7fff7f;margin-top:6px;line-height:1.8;"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ──────────────────────────────
+   HELPERS
+────────────────────────────── */
+function fmtTime(ts){
+  const d=new Date(ts);
+  const dd=String(d.getDate()).padStart(2,'0');
+  const mm=String(d.getMonth()+1).padStart(2,'0');
+  const yy=String(d.getFullYear()).slice(-2);
+  const hh=String(d.getHours()).padStart(2,'0');
+  const min=String(d.getMinutes()).padStart(2,'0');
+  return dd+"/"+mm+"/"+yy+" "+hh+":"+min;
+}
+
+/* ──────────────────────────────
+   LIGHTBOX
+────────────────────────────── */
+const lightbox=document.getElementById("lightbox");
+const lightboxImg=document.getElementById("lightbox-img");
+document.querySelectorAll("#gallery img").forEach(img=>{
+  img.onclick=()=>{lightbox.style.display="flex";lightboxImg.src=img.src;};
+});
+lightbox.onclick=()=>lightbox.style.display="none";
+
+/* ──────────────────────────────
+   GUESTBOOK
+────────────────────────────── */
+let messages=JSON.parse(localStorage.getItem("messages"))||[];
+function renderMessages(){
+  const c=document.getElementById("messages");c.innerHTML="";
+  messages.forEach(m=>{
+    const d=document.createElement("div");d.className="message";
+    d.innerHTML="<b>"+m.name+"</b>: "+m.text+"<div class='timestamp'>"+fmtTime(m.time)+"</div>";
+    c.appendChild(d);
+  });
+  c.scrollTop=c.scrollHeight;
+}
+function postMessage(){
+  const name=document.getElementById("nameGB").value;
+  const text=document.getElementById("messageGB").value;
+  if(!name.trim()||!text.trim()) return;
+  messages.push({name,text,time:Date.now()});
+  localStorage.setItem("messages",JSON.stringify(messages));
+  document.getElementById("messageGB").value="";
+  renderMessages();
+}
+renderMessages();
+
+/* ──────────────────────────────
+   DRAG / RESIZE CHATBOX
+────────────────────────────── */
+const box=document.getElementById("guestbook");
+let dragging=false,offsetX,offsetY;
+box.addEventListener("mousedown",e=>{
+  if(e.target.closest("#gb-resize-handle")||e.target.tagName==="INPUT"||e.target.tagName==="TEXTAREA"||e.target.tagName==="BUTTON") return;
+  dragging=true;offsetX=e.clientX-box.offsetLeft;offsetY=e.clientY-box.offsetTop;e.preventDefault();
+});
+document.addEventListener("mousemove",e=>{
+  if(!dragging) return;
+  const x=Math.max(0,Math.min(window.innerWidth-box.offsetWidth,e.clientX-offsetX));
+  const y=Math.max(0,Math.min(window.innerHeight-box.offsetHeight,e.clientY-offsetY));
+  box.style.right="auto";box.style.bottom="auto";box.style.left=x+"px";box.style.top=y+"px";
+});
+document.addEventListener("mouseup",()=>dragging=false);
+const resizeHandle=document.getElementById("gb-resize-handle");
+let resizing=false,rsX,rsY,rsW,rsH;
+resizeHandle.addEventListener("mousedown",e=>{
+  resizing=true;rsX=e.clientX;rsY=e.clientY;rsW=box.offsetWidth;rsH=box.offsetHeight;
+  e.preventDefault();e.stopPropagation();
+});
+document.addEventListener("mousemove",e=>{
+  if(!resizing) return;
+  box.style.width=Math.max(200,rsW+(e.clientX-rsX))+"px";
+  box.style.height=Math.max(180,rsH+(e.clientY-rsY))+"px";
+});
+document.addEventListener("mouseup",()=>resizing=false);
+
+/* ──────────────────────────────
+   CURSOR PLANES
+────────────────────────────── */
+const cursorCanvas=document.getElementById("cursor-canvas");
+const cc=cursorCanvas.getContext("2d");
+let cw=cursorCanvas.width=window.innerWidth,ch=cursorCanvas.height=window.innerHeight;
+window.addEventListener("resize",()=>{cw=cursorCanvas.width=window.innerWidth;ch=cursorCanvas.height=window.innerHeight;});
+let mouseX=cw/2,mouseY=ch/2;
+document.addEventListener("mousemove",e=>{mouseX=e.clientX;mouseY=e.clientY;});
+let cursorTrail=[],trailEnabled=true;
+function drawSmallPlane(ctx,x,y,angle,scale,alpha){
+  ctx.save();ctx.globalAlpha=alpha;ctx.translate(x,y);ctx.rotate(angle);ctx.scale(scale,scale);
+  ctx.fillStyle="#e8f4ff";ctx.beginPath();ctx.ellipse(0,0,13,5,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle="#c8d8ea";ctx.beginPath();ctx.moveTo(13,0);ctx.lineTo(20,-2);ctx.lineTo(20,2);ctx.closePath();ctx.fill();
+  ctx.fillStyle="#90bbdd";ctx.beginPath();ctx.moveTo(-1,-5);ctx.lineTo(-8,-14);ctx.lineTo(7,-14);ctx.lineTo(5,-5);ctx.closePath();ctx.fill();
+  ctx.fillStyle="#90bbdd";ctx.beginPath();ctx.moveTo(-11,-5);ctx.lineTo(-15,-10);ctx.lineTo(-7,-10);ctx.lineTo(-9,-5);ctx.closePath();ctx.fill();
+  ctx.fillStyle="#a0d8ef";ctx.beginPath();ctx.arc(3,0,2.5,0,Math.PI*2);ctx.fill();
+  ctx.restore();
+}
+let lastMX=mouseX,lastMY=mouseY;
+function animateCursor(){
+  cc.clearRect(0,0,cw,ch);
+  if(trailEnabled){
+    cursorTrail.push({x:mouseX,y:mouseY,angle:Math.atan2(mouseY-lastMY,mouseX-lastMX)});
+    if(cursorTrail.length>16) cursorTrail.shift();
+    lastMX=mouseX;lastMY=mouseY;
+    cursorTrail.forEach((p,i)=>{const t=(i+1)/cursorTrail.length;drawSmallPlane(cc,p.x,p.y,p.angle,0.5+t*0.5,t*0.65);});
+  }
+  drawSmallPlane(cc,mouseX,mouseY,cursorTrail.length>1?cursorTrail[cursorTrail.length-1].angle:0,1.1,1);
+  requestAnimationFrame(animateCursor);
+}
+animateCursor();
+
+/* ──────────────────────────────
+   CONFETTI
+────────────────────────────── */
+const confCanvas=document.getElementById("confettiCanvas");
+const confCtx=confCanvas.getContext("2d");
+confCanvas.width=window.innerWidth;confCanvas.height=window.innerHeight;
+let confetti=[],confRunning=false;
+function startConfetti(){
+  confetti=[];
+  for(let i=0;i<240;i++) confetti.push({x:Math.random()*confCanvas.width,y:-Math.random()*600,size:Math.random()*8+3,speed:Math.random()*3+2,color:`hsl(${Math.random()*360},70%,60%)`});
+  if(!confRunning){confRunning=true;animateConfetti();}
+}
+function animateConfetti(){
+  confCtx.clearRect(0,0,confCanvas.width,confCanvas.height);let active=false;
+  confetti.forEach(p=>{p.y+=p.speed;if(p.y<confCanvas.height)active=true;confCtx.fillStyle=p.color;confCtx.fillRect(p.x,p.y,p.size,p.size);});
+  if(active)requestAnimationFrame(animateConfetti);else confRunning=false;
+}
+
+/* ──────────────────────────────
+   KEYBOARD
+────────────────────────────── */
+const pressedKeys=new Set();
+document.addEventListener("keydown",e=>{
+  pressedKeys.add(e.key.toLowerCase());
+  if(pressedKeys.has("l")&&pressedKeys.has("f")&&pressedKeys.has("o")) startConfetti();
+  if(e.code==="Space"&&flappyRunning&&!flappyDead){e.preventDefault();flappyFlap();}
+  if(e.ctrlKey&&e.shiftKey&&e.key==="D"){e.preventDefault();openDev();}
+  if(e.key==="Escape") closeDev();
+});
+document.addEventListener("keyup",e=>pressedKeys.delete(e.key.toLowerCase()));
+
+/* ──────────────────────────────
+   FLAG GAME
+────────────────────────────── */
+const allFlags=[
+  {name:"Japan",code:"jp"},{name:"Deutschland",code:"de"},{name:"Brasilien",code:"br"},
+  {name:"Kanada",code:"ca"},{name:"Indien",code:"in"},{name:"Frankreich",code:"fr"},
+  {name:"Australien",code:"au"},{name:"Mexiko",code:"mx"},{name:"Italien",code:"it"},
+  {name:"Spanien",code:"es"},{name:"Vereinigtes Königreich",code:"gb"},{name:"USA",code:"us"},
+  {name:"China",code:"cn"},{name:"Russland",code:"ru"},{name:"Südkorea",code:"kr"},
+  {name:"Argentinien",code:"ar"},{name:"Türkei",code:"tr"},{name:"Ägypten",code:"eg"},
+  {name:"Südafrika",code:"za"},{name:"Nigeria",code:"ng"},{name:"Saudi-Arabien",code:"sa"},
+  {name:"Indonesien",code:"id"},{name:"Pakistan",code:"pk"},{name:"Bangladesch",code:"bd"},
+  {name:"Ukraine",code:"ua"},{name:"Polen",code:"pl"},{name:"Niederlande",code:"nl"},
+  {name:"Schweden",code:"se"},{name:"Norwegen",code:"no"},{name:"Griechenland",code:"gr"},
+  {name:"Portugal",code:"pt"},{name:"Belgien",code:"be"},{name:"Österreich",code:"at"},
+  {name:"Schweiz",code:"ch"},{name:"Dänemark",code:"dk"},{name:"Finnland",code:"fi"},
+  {name:"Tschechien",code:"cz"},{name:"Ungarn",code:"hu"},{name:"Rumänien",code:"ro"},
+  {name:"Bulgarien",code:"bg"},{name:"Slowakei",code:"sk"},{name:"Kroatien",code:"hr"},
+  {name:"Serbien",code:"rs"},{name:"Irland",code:"ie"},{name:"Luxemburg",code:"lu"},
+  {name:"Island",code:"is"},{name:"Litauen",code:"lt"},{name:"Lettland",code:"lv"},
+  {name:"Estland",code:"ee"},{name:"Weißrussland",code:"by"},{name:"Kolumbien",code:"co"},
+  {name:"Chile",code:"cl"},{name:"Peru",code:"pe"},{name:"Venezuela",code:"ve"},
+  {name:"Ecuador",code:"ec"},{name:"Bolivien",code:"bo"},{name:"Paraguay",code:"py"},
+  {name:"Uruguay",code:"uy"},{name:"Marokko",code:"ma"},{name:"Algerien",code:"dz"},
+  {name:"Tunesien",code:"tn"},{name:"Äthiopien",code:"et"},{name:"Kenia",code:"ke"},
+  {name:"Ghana",code:"gh"},{name:"Senegal",code:"sn"},{name:"Kamerun",code:"cm"},
+  {name:"Tansania",code:"tz"},{name:"Mosambik",code:"mz"},{name:"Simbabwe",code:"zw"},
+  {name:"Israel",code:"il"},{name:"Iran",code:"ir"},{name:"Irak",code:"iq"},
+  {name:"Syrien",code:"sy"},{name:"Jordanien",code:"jo"},{name:"Kuwait",code:"kw"},
+  {name:"Kasachstan",code:"kz"},{name:"Usbekistan",code:"uz"},{name:"Georgien",code:"ge"},
+  {name:"Armenien",code:"am"},{name:"Aserbaidschan",code:"az"},{name:"Thailand",code:"th"},
+  {name:"Vietnam",code:"vn"},{name:"Myanmar",code:"mm"},{name:"Kambodscha",code:"kh"},
+  {name:"Sri Lanka",code:"lk"},{name:"Neuseeland",code:"nz"},
+];
+const diffPools={easy:allFlags.slice(0,6),medium:allFlags.slice(0,30),hard:allFlags};
+let fScore=0,fAnswered=false,fCurrent;
+let flagLB=JSON.parse(localStorage.getItem("flagLB"))||[];
+function saveFlagLB(){localStorage.setItem("flagLB",JSON.stringify(flagLB));}
+function tryInsertLB(score,name){
+  flagLB.push({score,name});flagLB.sort((a,b)=>b.score-a.score);flagLB=flagLB.slice(0,3);saveFlagLB();renderLB();
+}
+function renderLB(){
+  const medals=["🥇","🥈","🥉"];
+  const container=document.getElementById("lb-rows");container.innerHTML="";
+  if(flagLB.length===0){container.innerHTML="<div class='lb-empty'>Noch keine Einträge — spiel los!</div>";return;}
+  for(let i=0;i<3;i++){
+    const row=document.createElement("div");row.className="lb-row";
+    if(flagLB[i]) row.innerHTML=`<span class="lb-rank">${medals[i]}</span><span class="lb-name">${flagLB[i].name}</span><span class="lb-score">${flagLB[i].score}</span>`;
+    else row.innerHTML=`<span class="lb-rank" style="opacity:0.25">${medals[i]}</span><span class="lb-name" style="opacity:0.25">—</span><span class="lb-score" style="opacity:0.25">—</span>`;
+    container.appendChild(row);
+  }
+}
+renderLB();
+let pendingLBScore=0;
+function openNameModal(score){
+  pendingLBScore=score;
+  document.getElementById("name-modal-title").textContent="Runde beendet — Score: "+score;
+  document.getElementById("name-modal-sub").textContent="Reicht das für die Top 3? Trag deinen Namen ein!";
+  document.getElementById("name-modal-input").value=document.getElementById("nameGB").value.trim();
+  document.getElementById("name-modal").classList.add("open");
+  setTimeout(()=>document.getElementById("name-modal-input").focus(),50);
+}
+function nameModalConfirm(){
+  const name=document.getElementById("name-modal-input").value.trim()||"Anonym";
+  document.getElementById("name-modal").classList.remove("open");
+  const wasTop3=flagLB.length<3||score>=(flagLB[flagLB.length-1]||{score:0}).score;
+  tryInsertLB(pendingLBScore,name);
+  if(flagLB.some(e=>e.name===name&&e.score===pendingLBScore)) startConfetti();
+}
+document.getElementById("name-modal-input").addEventListener("keydown",e=>{if(e.key==="Enter")nameModalConfirm();});
+function getPool(){return diffPools[document.getElementById("difficulty").value];}
+function nextFlag(){
+  fAnswered=false;document.getElementById("flag-feedback").textContent="";
+  const pool=getPool();fCurrent=pool[Math.floor(Math.random()*pool.length)];
+  document.getElementById("flagImg").src="https://flagcdn.com/w320/"+fCurrent.code+".png";
+  generateFlagAnswers(pool);
+}
+function generateFlagAnswers(pool){
+  const ans=document.getElementById("answers");ans.innerHTML="";
+  let options=[fCurrent.name];
+  pool.filter(f=>f.name!==fCurrent.name).sort(()=>Math.random()-0.5).slice(0,3).forEach(f=>options.push(f.name));
+  options.sort(()=>Math.random()-0.5);
+  options.forEach(o=>{
+    const btn=document.createElement("button");btn.className="answer-btn";btn.textContent=o;
+    btn.onclick=()=>checkFlag(o,btn,ans);ans.appendChild(btn);
+  });
+}
+function checkFlag(a,clickedBtn,ans){
+  if(fAnswered) return;fAnswered=true;
+  ans.querySelectorAll(".answer-btn").forEach(b=>{
+    b.style.pointerEvents="none";
+    if(b.textContent===fCurrent.name) b.classList.add("correct");
+  });
+  if(a===fCurrent.name){
+    fScore++;document.getElementById("flag-feedback").textContent="✅ Richtig!";
+  } else {
+    clickedBtn.classList.add("wrong");
+    document.getElementById("flag-feedback").textContent="❌ Falsch! Es war: "+fCurrent.name+" — Runde vorbei (Score: "+fScore+")";
+    if(fScore>0) openNameModal(fScore);
+    fScore=0;
+  }
+  document.getElementById("score").textContent=fScore;
+}
+document.getElementById("difficulty").addEventListener("change",()=>{fScore=0;document.getElementById("score").textContent=0;nextFlag();});
+nextFlag();
+
+/* ──────────────────────────────
+   FLAPPY PLANE
+────────────────────────────── */
+const FC=document.getElementById("flappyCanvas");
+const fctx=FC.getContext("2d");
+const FW=FC.width,FH=FC.height;
+let flappyRunning=false,flappyDead=false;
+let plane,pipes,clouds,flapScore,flapFrame,flapAnimId;
+let flapHigh=parseInt(localStorage.getItem("flappyHigh"))||0;
+let flapHighName=localStorage.getItem("flappyHighName")||"";
+function updateFlappyHSDisplay(){
+  const el=document.getElementById("flappy-hs-display");
+  if(el) el.textContent=flapHigh>0?("🏆 "+flapHigh+(flapHighName?" · "+flapHighName:"")):"";
+}
+updateFlappyHSDisplay();
+function flappyInit(){
+  plane={x:80,y:FH/2,vy:0,w:46,h:24,angle:0};pipes=[];flapScore=0;flapFrame=0;
+  clouds=[];for(let i=0;i<6;i++) clouds.push({x:Math.random()*FW,y:30+Math.random()*(FH*0.55),w:55+Math.random()*55,h:22+Math.random()*18,speed:0.4+Math.random()*0.35,alpha:0.35+Math.random()*0.45});
+}
+function flappyStart(){
+  flappyInit();flappyRunning=true;flappyDead=false;
+  document.getElementById("flappy-overlay").style.display="none";
+  if(flapAnimId) cancelAnimationFrame(flapAnimId);flapLoop();
+}
+function flappyFlap(){plane.vy=-6.8;}
+FC.addEventListener("click",()=>{if(flappyRunning&&!flappyDead)flappyFlap();});
+function flapLoop(){flapFrame++;flapUpdate();flapDraw();if(!flappyDead)flapAnimId=requestAnimationFrame(flapLoop);}
+function flapUpdate(){
+  plane.vy+=0.33;plane.y+=plane.vy;plane.angle=Math.max(-0.5,Math.min(0.9,plane.vy*0.065));
+  if(flapFrame%105===0){const gap=124;const top=55+Math.random()*(FH-gap-110);pipes.push({x:FW,top,bot:top+gap,w:52,scored:false});}
+  const speed=2.5+(flapScore*0.045);
+  for(let i=pipes.length-1;i>=0;i--){
+    pipes[i].x-=speed;
+    if(pipes[i].x+pipes[i].w<0){pipes.splice(i,1);continue;}
+    if(!pipes[i].scored&&pipes[i].x+pipes[i].w<plane.x){pipes[i].scored=true;flapScore++;}
+    const px=plane.x-plane.w/2+6,py=plane.y-plane.h/2+5,pw=plane.w-12,ph=plane.h-10;
+    if(px<pipes[i].x+pipes[i].w&&px+pw>pipes[i].x){if(py<pipes[i].top||py+ph>pipes[i].bot){flappyEnd();return;}}
+  }
+  clouds.forEach(c=>{c.x-=c.speed;if(c.x+c.w<0){c.x=FW+c.w;c.y=30+Math.random()*(FH*0.55);}});
+  if(plane.y+plane.h/2>FH||plane.y-plane.h/2<0) flappyEnd();
+}
+function drawCloud(ctx,x,y,w,h,alpha){
+  ctx.save();ctx.globalAlpha=alpha;ctx.fillStyle="#fff";
+  ctx.beginPath();ctx.ellipse(x+w*0.25,y+h*0.6,w*0.25,h*0.55,0,0,Math.PI*2);ctx.ellipse(x+w*0.55,y+h*0.65,w*0.28,h*0.6,0,0,Math.PI*2);ctx.ellipse(x+w*0.4,y+h*0.35,w*0.22,h*0.5,0,0,Math.PI*2);
+  ctx.fill();ctx.restore();
+}
+function drawFlapPlane(ctx,x,y,angle,w,h){
+  ctx.save();ctx.translate(x,y);ctx.rotate(angle);
+  ctx.fillStyle="#f0f8ff";ctx.beginPath();ctx.ellipse(0,0,w/2,h/2,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle="#cce0f0";ctx.beginPath();ctx.moveTo(w/2,0);ctx.lineTo(w/2+11,-3);ctx.lineTo(w/2+11,3);ctx.closePath();ctx.fill();
+  ctx.fillStyle="#82b9e8";ctx.beginPath();ctx.moveTo(-3,-h/2);ctx.lineTo(-12,-h/2-16);ctx.lineTo(w/2-5,-h/2-16);ctx.lineTo(w/2-8,-h/2);ctx.closePath();ctx.fill();
+  ctx.fillStyle="#82b9e8";ctx.beginPath();ctx.moveTo(-w/2+3,-h/2);ctx.lineTo(-w/2-7,-h/2-10);ctx.lineTo(-w/2+9,-h/2-10);ctx.lineTo(-w/2+7,-h/2);ctx.closePath();ctx.fill();
+  ctx.fillStyle="#3a8fd4";ctx.beginPath();ctx.ellipse(0,0,w/2-2,2,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle="#29b6f6";ctx.beginPath();ctx.arc(5,0,4,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#0288d1";ctx.lineWidth=1;ctx.stroke();
+  ctx.restore();
+}
+function flapDraw(){
+  const sky=fctx.createLinearGradient(0,0,0,FH);sky.addColorStop(0,"#1565a8");sky.addColorStop(0.6,"#42a5d5");sky.addColorStop(1,"#b3e0f5");
+  fctx.fillStyle=sky;fctx.fillRect(0,0,FW,FH);
+  clouds.forEach(c=>drawCloud(fctx,c.x,c.y,c.w,c.h,c.alpha));
+  pipes.forEach(p=>{
+    const pg=fctx.createLinearGradient(p.x,0,p.x+p.w,0);pg.addColorStop(0,"#2e7d32");pg.addColorStop(0.4,"#4caf50");pg.addColorStop(1,"#1b5e20");
+    fctx.fillStyle=pg;fctx.beginPath();if(fctx.roundRect)fctx.roundRect(p.x,0,p.w,p.top-12,3);else fctx.rect(p.x,0,p.w,p.top-12);fctx.fill();
+    fctx.fillStyle="#66bb6a";if(fctx.roundRect){fctx.beginPath();fctx.roundRect(p.x-5,p.top-24,p.w+10,24,4);fctx.fill();}else fctx.fillRect(p.x-5,p.top-24,p.w+10,24);
+    fctx.fillStyle=pg;fctx.beginPath();if(fctx.roundRect)fctx.roundRect(p.x,p.bot+12,p.w,FH-p.bot-12,3);else fctx.rect(p.x,p.bot+12,p.w,FH-p.bot-12);fctx.fill();
+    fctx.fillStyle="#66bb6a";if(fctx.roundRect){fctx.beginPath();fctx.roundRect(p.x-5,p.bot,p.w+10,24,4);fctx.fill();}else fctx.fillRect(p.x-5,p.bot,p.w+10,24);
+  });
+  drawFlapPlane(fctx,plane.x,plane.y,plane.angle,plane.w,plane.h);
+  fctx.fillStyle="white";fctx.font="bold 30px Inter";fctx.textAlign="center";fctx.shadowColor="rgba(0,0,0,0.6)";fctx.shadowBlur=8;fctx.fillText(flapScore,FW/2,46);fctx.shadowBlur=0;
+}
+function flappyEnd(){
+  flappyDead=true;flappyRunning=false;let newHigh=false;
+  if(flapScore>flapHigh){
+    newHigh=true;flapHigh=flapScore;
+    const gb=document.getElementById("nameGB").value.trim();
+    const n=gb||prompt("🏆 Neuer Flappy-Highscore! Dein Name:","") ||"Unbekannt";
+    flapHighName=n;localStorage.setItem("flappyHigh",flapHigh);localStorage.setItem("flappyHighName",flapHighName);
+    updateFlappyHSDisplay();startConfetti();
+  }
+  const ov=document.getElementById("flappy-overlay");ov.style.display="flex";
+  ov.innerHTML=`<h3>${newHigh?"🏆 Neuer Highscore!":"💥 Game Over"}</h3><p>Score: <b>${flapScore}</b></p><p style="font-size:0.85em;opacity:0.8">🏆 Highscore: <b>${flapHigh}</b>${flapHighName?" · von <i>"+flapHighName+"</i>":""}</p><button onclick="flappyStart()">Nochmal ▶</button>`;
+}
+flappyInit();flapDraw();
+
+/* ──────────────────────────────
+   WORLD VISITOR MAP
+   Equirectangular: lon [-180,180] → x [0,2000], lat [90,-90] → y [0,1001]
+────────────────────────────── */
+const cityCoords={
+  // Europe
+  "Berlin":{lon:13.4,lat:52.5},"Hamburg":{lon:10.0,lat:53.6},"München":{lon:11.6,lat:48.1},
+  "Frankfurt":{lon:8.7,lat:50.1},"Köln":{lon:6.9,lat:50.9},"Stuttgart":{lon:9.2,lat:48.8},
+  "Paris":{lon:2.3,lat:48.9},"Lyon":{lon:4.8,lat:45.7},"Marseille":{lon:5.4,lat:43.3},
+  "London":{lon:-0.1,lat:51.5},"Manchester":{lon:-2.2,lat:53.5},"Edinburgh":{lon:-3.2,lat:55.9},
+  "Amsterdam":{lon:4.9,lat:52.4},"Rotterdam":{lon:4.5,lat:51.9},"Brüssel":{lon:4.4,lat:50.8},
+  "Madrid":{lon:-3.7,lat:40.4},"Barcelona":{lon:2.2,lat:41.4},"Sevilla":{lon:-6.0,lat:37.4},
+  "Lissabon":{lon:-9.1,lat:38.7},"Porto":{lon:-8.6,lat:41.2},
+  "Rom":{lon:12.5,lat:41.9},"Mailand":{lon:9.2,lat:45.5},"Neapel":{lon:14.3,lat:40.8},
+  "Wien":{lon:16.4,lat:48.2},"Graz":{lon:15.4,lat:47.1},"Salzburg":{lon:13.0,lat:47.8},
+  "Zürich":{lon:8.5,lat:47.4},"Genf":{lon:6.1,lat:46.2},"Basel":{lon:7.6,lat:47.6},
+  "Stockholm":{lon:18.1,lat:59.3},"Göteborg":{lon:12.0,lat:57.7},
+  "Oslo":{lon:10.7,lat:59.9},"Bergen":{lon:5.3,lat:60.4},
+  "Kopenhagen":{lon:12.6,lat:55.7},"Warschau":{lon:21.0,lat:52.2},"Krakau":{lon:20.0,lat:50.1},
+  "Prag":{lon:14.4,lat:50.1},"Budapest":{lon:19.0,lat:47.5},"Bukarest":{lon:26.1,lat:44.4},
+  "Kiew":{lon:30.5,lat:50.5},"Moskau":{lon:37.6,lat:55.8},"St. Petersburg":{lon:30.3,lat:59.9},
+  "Istanbul":{lon:29.0,lat:41.0},"Athen":{lon:23.7,lat:37.9},"Helsinki":{lon:25.0,lat:60.2},
+  "Riga":{lon:24.1,lat:56.9},"Tallinn":{lon:24.7,lat:59.4},"Vilnius":{lon:25.3,lat:54.7},
+  "Zagreb":{lon:16.0,lat:45.8},"Belgrad":{lon:20.5,lat:44.8},"Lubliana":{lon:14.5,lat:46.1},
+  "Reykjavik":{lon:-22.0,lat:64.1},
+  // Americas
+  "New York":{lon:-74.0,lat:40.7},"Los Angeles":{lon:-118.2,lat:34.1},"Chicago":{lon:-87.6,lat:41.9},
+  "Houston":{lon:-95.4,lat:29.8},"Miami":{lon:-80.2,lat:25.8},"San Francisco":{lon:-122.4,lat:37.8},
+  "Seattle":{lon:-122.3,lat:47.6},"Las Vegas":{lon:-115.1,lat:36.2},"Boston":{lon:-71.1,lat:42.4},
+  "Washington":{lon:-77.0,lat:38.9},"Atlanta":{lon:-84.4,lat:33.7},"Dallas":{lon:-96.8,lat:32.8},
+  "Toronto":{lon:-79.4,lat:43.7},"Montreal":{lon:-73.6,lat:45.5},"Vancouver":{lon:-123.1,lat:49.3},
+  "Mexico City":{lon:-99.1,lat:19.4},"Guadalajara":{lon:-103.3,lat:20.7},
+  "São Paulo":{lon:-46.6,lat:-23.5},"Rio de Janeiro":{lon:-43.2,lat:-22.9},"Brasília":{lon:-47.9,lat:-15.8},
+  "Buenos Aires":{lon:-58.4,lat:-34.6},"Bogotá":{lon:-74.1,lat:4.7},"Lima":{lon:-77.0,lat:-12.0},
+  "Santiago":{lon:-70.7,lat:-33.5},"Caracas":{lon:-66.9,lat:10.5},"Quito":{lon:-78.5,lat:-0.2},
+  "Havanna":{lon:-82.4,lat:23.1},
+  // Africa
+  "Kairo":{lon:31.2,lat:30.1},"Casablanca":{lon:-7.6,lat:33.6},"Tunis":{lon:10.2,lat:36.8},
+  "Algier":{lon:3.1,lat:36.7},"Lagos":{lon:3.4,lat:6.5},"Accra":{lon:-0.2,lat:5.6},
+  "Dakar":{lon:-17.4,lat:14.7},"Nairobi":{lon:36.8,lat:-1.3},"Addis Abeba":{lon:38.7,lat:9.0},
+  "Kapstadt":{lon:18.4,lat:-33.9},"Johannesburg":{lon:28.0,lat:-26.2},"Dar es Salaam":{lon:39.3,lat:-6.8},
+  "Kinshasa":{lon:15.3,lat:-4.3},"Luanda":{lon:13.2,lat:-8.8},"Khartoum":{lon:32.5,lat:15.6},
+  // Asia
+  "Tokio":{lon:139.7,lat:35.7},"Osaka":{lon:135.5,lat:34.7},"Kyoto":{lon:135.8,lat:35.0},
+  "Seoul":{lon:126.9,lat:37.6},"Busan":{lon:129.1,lat:35.1},
+  "Peking":{lon:116.4,lat:39.9},"Shanghai":{lon:121.5,lat:31.2},"Guangzhou":{lon:113.3,lat:23.1},"Shenzhen":{lon:114.1,lat:22.5},
+  "Hongkong":{lon:114.2,lat:22.3},"Taipei":{lon:121.6,lat:25.0},
+  "Singapur":{lon:103.8,lat:1.4},"Kuala Lumpur":{lon:101.7,lat:3.1},"Bangkok":{lon:100.5,lat:13.8},
+  "Jakarta":{lon:106.8,lat:-6.2},"Manila":{lon:121.0,lat:14.6},"Ho-Chi-Minh-Stadt":{lon:106.7,lat:10.8},
+  "Hanoi":{lon:105.8,lat:21.0},"Yangon":{lon:96.1,lat:16.9},"Phnom Penh":{lon:104.9,lat:11.6},
+  "Mumbai":{lon:72.9,lat:19.1},"Delhi":{lon:77.2,lat:28.6},"Bangalore":{lon:77.6,lat:12.9},"Chennai":{lon:80.3,lat:13.1},
+  "Colombo":{lon:79.9,lat:6.9},"Karachi":{lon:67.0,lat:24.9},"Lahore":{lon:74.3,lat:31.5},"Dhaka":{lon:90.4,lat:23.7},
+  "Dubai":{lon:55.3,lat:25.2},"Abu Dhabi":{lon:54.4,lat:24.5},"Doha":{lon:51.5,lat:25.3},
+  "Riad":{lon:46.7,lat:24.7},"Tel Aviv":{lon:34.8,lat:32.1},"Amman":{lon:35.9,lat:31.9},
+  "Bagdad":{lon:44.4,lat:33.3},"Teheran":{lon:51.4,lat:35.7},"Ankara":{lon:32.9,lat:39.9},
+  "Taschkent":{lon:69.2,lat:41.3},"Almaty":{lon:76.9,lat:43.3},
+  // Oceania
+  "Sydney":{lon:151.2,lat:-33.9},"Melbourne":{lon:144.9,lat:-37.8},"Brisbane":{lon:153.0,lat:-27.5},
+  "Perth":{lon:115.9,lat:-31.9},"Auckland":{lon:174.8,lat:-36.9},"Wellington":{lon:174.8,lat:-41.3},
+};
+
+function lonLatToSvgPct(lon,lat){
+  // ViewBox 0 0 2000 1001, equirectangular
+  const x=((lon+180)/360)*100;
+  const y=((90-lat)/180)*100;
+  return {x,y};
+}
+
+let visitors=JSON.parse(localStorage.getItem("visitors"))||[];
+function saveVisitors(){localStorage.setItem("visitors",JSON.stringify(visitors));}
+function renderVisitors(){
+  const wrap=document.getElementById("world-map-wrap");
+  wrap.querySelectorAll(".map-dot").forEach(d=>d.remove());
+  visitors.forEach(v=>{
+    const coord=cityCoords[v.city];if(!coord) return;
+    const pct=lonLatToSvgPct(coord.lon,coord.lat);
+    const dot=document.createElement("div");dot.className="map-dot";
+    dot.title=v.name+" · "+v.city;
+    dot.style.left=pct.x+"%";dot.style.top=pct.y+"%";
+    wrap.appendChild(dot);
+  });
+  const list=document.getElementById("map-visitor-list");
+  list.textContent=visitors.length===0?"Noch keine Einträge."
+    :"Besucher: "+visitors.map(v=>v.name+" ("+v.city+")").join(" · ");
+}
+renderVisitors();
+function openMapModal(){document.getElementById("map-modal").classList.add("open");}
+function closeMapModal(){document.getElementById("map-modal").classList.remove("open");}
+function mapModalConfirm(){
+  const name=document.getElementById("map-name-in").value.trim()||"Anonym";
+  const city=document.getElementById("map-city-in").value.trim();
+  if(!city){document.getElementById("map-city-hint").textContent="⚠ Bitte eine Stadt eingeben.";return;}
+  if(!cityCoords[city]){document.getElementById("map-city-hint").textContent="⚠ Stadt nicht gefunden. Bekannte Städte: Berlin, Paris, New York, Tokio, …";return;}
+  visitors.push({name,city,time:Date.now()});saveVisitors();closeMapModal();renderVisitors();
+  document.getElementById("map-name-in").value="";document.getElementById("map-city-in").value="";
+  document.getElementById("map-city-hint").textContent="";
+}
+document.getElementById("map-name-in").addEventListener("keydown",e=>{if(e.key==="Enter")mapModalConfirm();});
+document.getElementById("map-city-in").addEventListener("keydown",e=>{if(e.key==="Enter")mapModalConfirm();});
+
+/* ──────────────────────────────
+   DEV MENU
+────────────────────────────── */
+let devOpen=false;
+function openDev(){devOpen=true;document.getElementById("dev-menu").classList.add("open");refreshDevStats();}
+function closeDev(){devOpen=false;document.getElementById("dev-menu").classList.remove("open");}
+function setBgFilter(f){document.getElementById("bg").style.filter=f;}
+function devToggleTrail(){trailEnabled=!trailEnabled;if(!trailEnabled)cursorTrail=[];}
+function devToggleHint(){const h=document.getElementById("dev-hint");h.style.display=h.style.display==="none"?"":"none";}
+function devToggleBlur(){const b=document.getElementById("bg");b.style.filter=b.style.filter.includes("blur(0")?b.style.filter.replace("blur(0px)","blur(6px)"):b.style.filter.replace("blur(6px)","blur(0px)");}
+function getLocalStorageSize(){
+  let total=0;for(const k in localStorage) if(localStorage.hasOwnProperty(k)) total+=((localStorage[k].length+k.length)*2);
+  return(total/1024).toFixed(1)+" KB";
+}
+function refreshDevStats(){
+  const lsKeys=Object.keys(localStorage);
+  document.getElementById("dv-lskeys").textContent=lsKeys.length;
+  document.getElementById("dv-msgs").textContent=(JSON.parse(localStorage.getItem("messages"))||[]).length;
+  const lb=JSON.parse(localStorage.getItem("flagLB"))||[];
+  document.getElementById("dv-flaghs").textContent=lb.length>0?(lb[0].score+" · "+lb[0].name):"—";
+  document.getElementById("dv-flappy").textContent=(localStorage.getItem("flappyHigh")||"—")+(localStorage.getItem("flappyHighName")?" · "+localStorage.getItem("flappyHighName"):"");
+  document.getElementById("dv-pins").textContent=(JSON.parse(localStorage.getItem("visitors"))||[]).length;
+  document.getElementById("dv-vp").textContent=window.innerWidth+"×"+window.innerHeight;
+  document.getElementById("dv-online").textContent=navigator.onLine?"✅ Online":"❌ Offline";
+  document.getElementById("dv-lang").textContent=navigator.language||"—";
+  document.getElementById("dv-plat").textContent=navigator.platform||"—";
+  document.getElementById("dv-storage").textContent=getLocalStorageSize();
+  // Leaderboard snapshot
+  document.getElementById("dv-lb").textContent=lb.map((e,i)=>(i+1)+". "+e.name+" ("+e.score+")").join(" | ")||"leer";
+  // Last message
+  const msgs=JSON.parse(localStorage.getItem("messages"))||[];
+  const lm=msgs[msgs.length-1];
+  document.getElementById("dv-lastmsg").textContent=lm?(lm.name+": "+lm.text.slice(0,20)+"…"):"—";
+  // Last visitor
+  const vis=JSON.parse(localStorage.getItem("visitors"))||[];
+  const lv=vis[vis.length-1];
+  document.getElementById("dv-lastpin").textContent=lv?(lv.name+" ("+lv.city+")"):"—";
+  // LS key list
+  const ll=document.getElementById("dv-ls-list");ll.innerHTML="";
+  lsKeys.forEach(k=>{const sp=document.createElement("span");sp.className="dev-tag";sp.textContent=k;ll.appendChild(sp);ll.appendChild(document.createTextNode(" "));});
+}
+</script>
+</body>
+</html>
