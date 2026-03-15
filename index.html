@@ -28,8 +28,10 @@ section h2{font-size:2.2em;margin-bottom:20px;}
 #lightbox{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);justify-content:center;align-items:center;z-index:2000;}
 #lightbox img{max-width:90%;max-height:90%;border-radius:10px;}
 
-/* CHATBOX */
-#guestbook{position:fixed;bottom:20px;right:20px;width:320px;height:280px;min-width:200px;min-height:180px;background:rgba(0,0,0,0.65);border-radius:10px;padding:10px;overflow:hidden;cursor:none;display:flex;flex-direction:column;gap:6px;user-select:none;}
+/* CHATBOX — Desktop */
+#gb-toggle{display:none;}
+#guestbook{position:fixed;bottom:20px;right:20px;width:320px;height:280px;min-width:200px;min-height:180px;background:rgba(0,0,0,0.65);border-radius:10px;padding:10px;overflow:hidden;cursor:none;display:flex;flex-direction:column;gap:6px;user-select:none;z-index:3000;}
+#gb-mobile-header{display:none;}
 #gb-resize-handle{position:absolute;bottom:0;right:0;width:18px;height:18px;cursor:nwse-resize;z-index:10;}
 #gb-resize-handle::before{content:"";position:absolute;bottom:4px;right:4px;width:10px;height:10px;border-right:2px solid rgba(255,255,255,0.5);border-bottom:2px solid rgba(255,255,255,0.5);border-radius:1px;}
 #messages{flex:1;overflow-y:auto;min-height:0;}
@@ -40,6 +42,42 @@ section h2{font-size:2.2em;margin-bottom:20px;}
 #gb-inputs textarea{height:42px;}
 #gb-inputs button{padding:5px;border:none;border-radius:6px;background:rgba(255,255,255,0.2);color:white;cursor:none;font-weight:600;}
 #gb-inputs button:hover{background:rgba(255,255,255,0.35);}
+
+/* CHATBOX — Mobile */
+@media(max-width:600px){
+  #gb-toggle{
+    display:flex;align-items:center;justify-content:center;
+    position:fixed;bottom:20px;right:20px;
+    width:52px;height:52px;border-radius:50%;
+    background:rgba(0,0,0,0.75);
+    border:2px solid rgba(255,255,255,0.3);
+    font-size:1.5em;cursor:pointer;z-index:3100;
+    box-shadow:0 4px 16px rgba(0,0,0,0.5);
+    transition:transform 0.2s;
+  }
+  #gb-toggle:active{transform:scale(0.92);}
+  #guestbook{
+    display:none;
+    position:fixed;bottom:0;left:0;right:0;
+    width:100%;height:70vh;
+    border-radius:18px 18px 0 0;
+    padding:12px;
+    cursor:default;
+  }
+  #guestbook.mobile-open{display:flex;}
+  #gb-mobile-header{
+    display:flex;justify-content:space-between;align-items:center;
+    flex-shrink:0;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.15);
+    margin-bottom:4px;
+  }
+  #gb-mobile-header span{font-weight:600;font-size:1em;}
+  #gb-mobile-close{
+    background:none;border:none;color:white;font-size:1.4em;
+    cursor:pointer;padding:0 4px;line-height:1;
+  }
+  #gb-resize-handle{display:none;}
+  body.chat-open{overflow:hidden;}
+}
 
 /* FLAG GAME */
 #flagGame{text-align:center;}
@@ -158,15 +196,15 @@ section h2{font-size:2.2em;margin-bottom:20px;}
 
 <header>
   <h1>Flo ist IN!</h1>
-  <p>Willkommen in Flo's kleiner Ecke. Viel Spaß beim erkunden! </p>
+  <p>Willkommen in Flo's kleiner Ecke. Viel Spaß beim Erkunden! </p>
 </header>
 
 <section id="about">
   <h2>Specials</h2>
   <div class="cards">
     <div class="card"><h3>Chatbox</h3><p>Ich freu mich über Nachrichten im Gästebuch und teilt gerne Eure Ideen mit!</p></div>
-    <div class="card"><h3>Mini-Games</h3><p>Gut in der Schule aufgepasst? Oder schnelle Finger? Beweist euch und schafft es auf die Rangliste!</p></div>
-    <div class="card"><h3>Secrets</h3><p>Die Website ist mit vielen easter-eggs beschmückt. Fragt euren Kontakt des Vertrauens oder findet sie selbst heraus!</p></div>
+    <div class="card"><h3>Mini-Games</h3><p>Gut in der Schule aufgepasst? Oder schnelle Finger? Beweist Euch und schafft es auf die Rangliste!</p></div>
+    <div class="card"><h3>Secrets</h3><p>Die Website ist mit vielen Easter-Eggs beschmückt. Fragt euren Kontakt des Vertrauens oder findet sie selbst heraus!</p></div>
   </div>
 </section>
 
@@ -422,9 +460,16 @@ section h2{font-size:2.2em;margin-bottom:20px;}
   </div>
 </div>
 
+<!-- CHAT TOGGLE (mobile only) -->
+<button id="gb-toggle" onclick="gbToggle()">💬</button>
+
 <!-- CHAT -->
 <div id="guestbook">
   <div id="gb-resize-handle"></div>
+  <div id="gb-mobile-header">
+    <span>💬 Gästebuch</span>
+    <button id="gb-mobile-close" onclick="gbToggle()">✕</button>
+  </div>
   <div id="messages"></div>
   <div id="gb-inputs">
     <input id="nameGB" placeholder="Name">
@@ -532,6 +577,17 @@ function postMessage(){
   renderMessages();
 }
 renderMessages();
+
+/* MOBILE CHAT TOGGLE */
+function gbToggle(){
+  const isMobile=window.innerWidth<=600;
+  if(!isMobile) return;
+  const gb=document.getElementById("guestbook");
+  const isOpen=gb.classList.contains("mobile-open");
+  gb.classList.toggle("mobile-open");
+  document.body.classList.toggle("chat-open",!isOpen);
+  if(!isOpen) renderMessages();
+}
 
 /* ──────────────────────────────
    DRAG / RESIZE CHATBOX
