@@ -87,7 +87,6 @@ section h2{font-size:2.2em;margin-bottom:20px;font-weight:700;}
 #flag-controls button:hover{background:rgba(255,255,255,0.35);}
 #flag-stats{display:flex;justify-content:center;gap:20px;margin-top:14px;font-size:0.95em;}
 #flag-feedback{min-height:24px;font-size:1em;font-weight:600;margin-top:8px;}
-.lb-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-top:20px;}
 .lb-wrap{background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:14px 18px;backdrop-filter:blur(4px);}
 .lb-wrap h3{font-size:0.8em;margin-bottom:10px;opacity:0.7;letter-spacing:0.06em;text-transform:uppercase;}
 .lb-row{display:flex;align-items:center;gap:9px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.07);}
@@ -96,6 +95,18 @@ section h2{font-size:2.2em;margin-bottom:20px;font-weight:700;}
 .lb-name{flex:1;font-weight:600;font-size:0.88em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .lb-score{font-size:0.95em;font-weight:700;color:#ffe066;}
 .lb-empty{opacity:0.38;font-size:0.82em;text-align:center;padding:8px 0;}
+/* ── Swipeable flag leaderboard ── */
+#flag-lb-container{margin-top:24px;max-width:360px;margin-left:auto;margin-right:auto;}
+#flag-lb-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding:0 2px;}
+.lb-tab-label{font-size:0.82em;font-weight:700;opacity:0.85;letter-spacing:0.04em;display:flex;align-items:center;gap:6px;}
+.lb-tab-label .swipe-hint{font-size:0.7em;opacity:0.4;font-weight:400;}
+#flag-lb-select{padding:5px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.5);color:white;font-size:0.8em;font-family:'Outfit',sans-serif;cursor:pointer;}
+#flag-lb-slider{overflow:hidden;border-radius:12px;}
+#flag-lb-track{display:flex;transition:transform 0.32s cubic-bezier(.4,0,.2,1);will-change:transform;}
+.flag-lb-panel{min-width:100%;width:100%;padding:14px 18px;background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.1);box-sizing:border-box;border-radius:12px;}
+#flag-lb-dots{display:flex;justify-content:center;gap:7px;margin-top:10px;}
+.lb-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.25);transition:background 0.2s,transform 0.2s;cursor:pointer;}
+.lb-dot.active{background:#ffe066;transform:scale(1.25);}
 #name-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:5000;justify-content:center;align-items:center;}
 #name-modal.open{display:flex;}
 #name-modal-box{background:rgba(18,18,38,0.97);border:1px solid rgba(255,255,255,0.15);border-radius:14px;padding:28px 32px;min-width:300px;text-align:center;backdrop-filter:blur(8px);}
@@ -157,10 +168,10 @@ section h2{font-size:2.2em;margin-bottom:20px;font-weight:700;}
 <body>
 <div id="bg"></div><div id="overlay"></div>
 <canvas id="confettiCanvas"></canvas><canvas id="cursor-canvas"></canvas>
-<div id="dev-hint">[ STRG + SHIFT + D &#8594; Dev-Men&#252; ]</div>
+<div id="dev-hint">[ STRG + SHIFT + D &#8594; Dev-Men&#252; ] &nbsp;|&nbsp; [ Logo doppeltippen auf Handy ]</div>
 
 <nav>
-  <div class="nav-logo">flo@flo.in</div>
+  <div class="nav-logo" id="nav-logo" ondblclick="openDev()">flo.in</div>
   <div class="nav-links">
     <a href="#about">Guide</a><a href="#gallery-section">Fotos</a>
     <a href="#flagGame">Flaggen</a><a href="#flappySection">Flappy</a>
@@ -177,6 +188,7 @@ section h2{font-size:2.2em;margin-bottom:20px;font-weight:700;}
   <a href="#flappySection" onclick="closeMobileNav()">&#9992;&#65039; Flappy</a>
   <a href="#mapSection" onclick="closeMobileNav()">&#127758; Karte</a>
   <a href="#contactSection" onclick="closeMobileNav()">&#128140; Kontakt</a>
+  <a href="javascript:void(0)" onclick="closeMobileNav();openDev();" style="border-top:1px solid rgba(255,255,255,0.1);margin-top:6px;padding-top:14px;opacity:0.6;font-size:0.9em;">&#9889; Dev-Men&#252;</a>
 </div>
 
 <header>
@@ -222,11 +234,31 @@ section h2{font-size:2.2em;margin-bottom:20px;font-weight:700;}
     </select>
     <button onclick="nextFlag()">N&#228;chste Flagge &#9654;</button>
   </div>
-  <div class="lb-grid" style="margin-top:24px;max-width:900px;margin-left:auto;margin-right:auto;">
-    <div class="lb-wrap"><h3>&#127942; Top 3 &#8212; Leicht</h3><div id="lb-easy"></div></div>
-    <div class="lb-wrap"><h3>&#127942; Top 3 &#8212; Mittel</h3><div id="lb-medium"></div></div>
-    <div class="lb-wrap"><h3>&#127942; Top 3 &#8212; Schwer</h3><div id="lb-hard"></div></div>
-    <div class="lb-wrap"><h3>&#127942; Top 3 &#8212; Impossible</h3><div id="lb-impossible"></div></div>
+  <!-- Swipeable leaderboard -->
+  <div id="flag-lb-container">
+    <div id="flag-lb-header">
+      <div class="lb-tab-label">&#127942; Rangliste <span class="swipe-hint">&#8592; wischen &#8594;</span></div>
+      <select id="flag-lb-select" onchange="flagLBGoTo(this.value)">
+        <option value="0">Leicht</option>
+        <option value="1">Mittel</option>
+        <option value="2">Schwer</option>
+        <option value="3">&#9760;&#65039; Impossible</option>
+      </select>
+    </div>
+    <div id="flag-lb-slider">
+      <div id="flag-lb-track">
+        <div class="flag-lb-panel"><div id="lb-easy"></div></div>
+        <div class="flag-lb-panel"><div id="lb-medium"></div></div>
+        <div class="flag-lb-panel"><div id="lb-hard"></div></div>
+        <div class="flag-lb-panel"><div id="lb-impossible"></div></div>
+      </div>
+    </div>
+    <div id="flag-lb-dots">
+      <div class="lb-dot active" onclick="flagLBGoTo(0)"></div>
+      <div class="lb-dot" onclick="flagLBGoTo(1)"></div>
+      <div class="lb-dot" onclick="flagLBGoTo(2)"></div>
+      <div class="lb-dot" onclick="flagLBGoTo(3)"></div>
+    </div>
   </div>
 </section>
 
@@ -305,7 +337,7 @@ section h2{font-size:2.2em;margin-bottom:20px;font-weight:700;}
 
 <section id="contactSection">
   <h2>&#128140; Kontakt</h2>
-  <p style="opacity:0.7;margin-bottom:20px;">Schreib mir eine eMail an flo@flo.in!</p>
+  <p style="opacity:0.7;margin-bottom:20px;">Schreib mir eine Nachricht &#8212; ich freu mich!</p>
   <div class="contact-form">
     <input id="contact-name" placeholder="Dein Name" maxlength="40">
     <input id="contact-email" placeholder="Deine E-Mail (optional)" type="email" maxlength="80">
@@ -776,7 +808,88 @@ function sendContactEmail(){
   setTimeout(function(){fb.textContent="";document.getElementById("contact-name").value="";document.getElementById("contact-email").value="";document.getElementById("contact-msg").value="";},3000);
 }
 
-// ══ DEV MENU ══
+// ══ SWIPEABLE FLAG LEADERBOARD ══
+var flagLBCurrentIndex = 0;
+var flagLBNames = ["Leicht","Mittel","Schwer","Impossible ☠️"];
+
+function flagLBGoTo(idx) {
+  idx = parseInt(idx);
+  flagLBCurrentIndex = idx;
+  var track = document.getElementById("flag-lb-track");
+  track.style.transform = "translateX(-" + (idx * 100) + "%)";
+  // dots
+  document.querySelectorAll(".lb-dot").forEach(function(d,i){
+    d.classList.toggle("active", i === idx);
+  });
+  // dropdown
+  var sel = document.getElementById("flag-lb-select");
+  if (sel) sel.value = String(idx);
+}
+
+// Touch swipe support for flag LB
+(function(){
+  var slider = document.getElementById("flag-lb-slider");
+  if (!slider) return;
+  var startX = 0, startY = 0, isDragging = false;
+  slider.addEventListener("touchstart", function(e){
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    isDragging = true;
+  }, {passive:true});
+  slider.addEventListener("touchend", function(e){
+    if (!isDragging) return;
+    isDragging = false;
+    var dx = e.changedTouches[0].clientX - startX;
+    var dy = e.changedTouches[0].clientY - startY;
+    if (Math.abs(dx) < 40 || Math.abs(dy) > Math.abs(dx)) return; // not a horizontal swipe
+    if (dx < 0 && flagLBCurrentIndex < 3) flagLBGoTo(flagLBCurrentIndex + 1);
+    else if (dx > 0 && flagLBCurrentIndex > 0) flagLBGoTo(flagLBCurrentIndex - 1);
+  }, {passive:true});
+})();
+
+// Auto-switch leaderboard when difficulty changes
+document.getElementById("difficulty").addEventListener("change", function(){
+  var map = {easy:0, medium:1, hard:2, impossible:3};
+  var idx = map[this.value];
+  if (idx !== undefined) flagLBGoTo(idx);
+});
+
+// ══ SHAKE TO CONFETTI ══
+(function(){
+  if (!window.DeviceMotionEvent) return;
+  var lastShake = 0;
+  var lastX, lastY, lastZ;
+  window.addEventListener("devicemotion", function(e){
+    var acc = e.accelerationIncludingGravity;
+    if (!acc) return;
+    if (lastX === undefined) { lastX = acc.x; lastY = acc.y; lastZ = acc.z; return; }
+    var delta = Math.abs(acc.x - lastX) + Math.abs(acc.y - lastY) + Math.abs(acc.z - lastZ);
+    lastX = acc.x; lastY = acc.y; lastZ = acc.z;
+    if (delta > 30) {
+      var now = Date.now();
+      if (now - lastShake > 1500) {
+        lastShake = now;
+        startConfetti();
+      }
+    }
+  });
+})();
+
+// ══ DOUBLE-TAP LOGO → DEV MENU (mobile touch) ══
+(function(){
+  var logo = document.getElementById("nav-logo");
+  if (!logo) return;
+  var lastTap = 0;
+  logo.addEventListener("touchend", function(e){
+    var now = Date.now();
+    if (now - lastTap < 350) {
+      e.preventDefault();
+      openDev();
+    }
+    lastTap = now;
+  });
+})();
+
 function openDev(){document.getElementById("dev-menu").classList.add("open");refreshDevStats();}
 function closeDev(){document.getElementById("dev-menu").classList.remove("open");}
 function setBgFilter(f){document.getElementById("bg").style.filter=f;}
