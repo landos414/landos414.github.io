@@ -2,14 +2,16 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Flo ist IN!</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Outfit',sans-serif;}
-body{color:white;overflow-x:hidden;cursor:none;}
+body{color:white;overflow-x:hidden;cursor:none;max-width:100vw;}
+html{overflow-x:hidden;}
+@media(pointer:coarse){#cursor-canvas{display:none;}body{cursor:auto;}}
 #bg{position:fixed;top:0;left:0;width:100%;height:100%;background:url("https://images.unsplash.com/photo-1502082553048-f009c37129b9?q=80&w=1920") center/cover;filter:blur(6px);transform:scale(1.1);z-index:-2;}
 #overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.30);z-index:-1;}
 #cursor-canvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;}
@@ -121,9 +123,10 @@ section h2{font-size:2.2em;margin-bottom:20px;font-weight:700;}
 #flappy-overlay button{padding:10px 26px;border:none;border-radius:8px;background:rgba(255,255,255,0.25);color:white;font-size:1em;font-weight:700;cursor:none;font-family:'Outfit',sans-serif;transition:background 0.2s;}
 #flappy-overlay button:hover{background:rgba(255,255,255,0.45);}
 #mapSection{text-align:center;}
-#world-map-wrap{position:relative;margin:0 auto;max-width:900px;border-radius:14px;overflow:hidden;box-shadow:0 6px 32px rgba(0,0,0,0.55);background:linear-gradient(180deg,#0a2744 0%,#0d3566 40%,#0a4a7c 100%);}
+#world-map-wrap{position:relative;margin:0 auto;max-width:920px;border-radius:14px;overflow:hidden;box-shadow:0 6px 32px rgba(0,0,0,0.55);background:#0d2b45;}
 #worldMapSvg{width:100%;height:auto;display:block;}
-#worldMapSvg .land{fill:#2d6a2d;stroke:#3d8a3d;stroke-width:0.4;}
+#worldMapSvg .land{fill:#2e7d4a;stroke:#3a9e5f;stroke-width:0.5;stroke-linejoin:round;}
+@keyframes pulse-online{0%,100%{opacity:1;box-shadow:0 0 6px #32e87a;}50%{opacity:0.5;box-shadow:0 0 12px #32e87a;}}
 .map-dot{position:absolute;width:11px;height:11px;border-radius:50%;background:#ffe066;box-shadow:0 0 0 3px rgba(255,224,102,0.3),0 0 12px rgba(255,224,102,0.7);transform:translate(-50%,-50%);pointer-events:none;animation:pulse-dot 2.2s infinite;}
 @keyframes pulse-dot{0%,100%{box-shadow:0 0 0 3px rgba(255,224,102,0.3),0 0 12px rgba(255,224,102,0.7);}50%{box-shadow:0 0 0 8px rgba(255,224,102,0.06),0 0 22px rgba(255,224,102,0.9);}}
 #map-visitor-list{margin-top:12px;font-size:0.88em;opacity:0.75;}
@@ -290,33 +293,145 @@ section h2{font-size:2.2em;margin-bottom:20px;font-weight:700;}
 
 <section id="mapSection">
   <h2>Besucher-Weltkarte</h2>
-  <p style="opacity:0.7;margin-bottom:16px;">Trag ein, wo du herkommst! PS: Die Karte wurde von Tiffy erstellt...</p>
+  <p style="opacity:0.7;margin-bottom:8px;">Trag ein, wo du herkommst! PS: Die Karte wurde von Tiffy erstellt...</p>
+  <div id="online-counter" style="display:inline-flex;align-items:center;gap:8px;background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:6px 16px;font-size:0.88em;margin-bottom:16px;">
+    <span style="width:8px;height:8px;border-radius:50%;background:#32e87a;display:inline-block;box-shadow:0 0 6px #32e87a;animation:pulse-online 2s infinite;"></span>
+    <span id="online-count">1</span> gerade online
+  </div>
   <div id="world-map-wrap">
-    <svg id="worldMapSvg" viewBox="0 0 2000 1001" xmlns="http://www.w3.org/2000/svg">
-      <rect width="2000" height="1001" fill="#0a2e52"/>
-      <g stroke="#0d3b6e" stroke-width="0.6" fill="none">
-        <line x1="0" y1="250" x2="2000" y2="250"/><line x1="0" y1="500" x2="2000" y2="500"/>
-        <line x1="0" y1="750" x2="2000" y2="750"/><line x1="500" y1="0" x2="500" y2="1001"/>
-        <line x1="1000" y1="0" x2="1000" y2="1001"/><line x1="1500" y1="0" x2="1500" y2="1001"/>
+    <svg id="worldMapSvg" viewBox="0 0 1010 506" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%;height:auto;">
+      <rect width="1010" height="506" fill="#0d2b45"/>
+      <!-- Graticule lines -->
+      <g stroke="#1a4060" stroke-width="0.4" fill="none">
+        <line x1="0" y1="126.5" x2="1010" y2="126.5"/>
+        <line x1="0" y1="253" x2="1010" y2="253"/>
+        <line x1="0" y1="379.5" x2="1010" y2="379.5"/>
+        <line x1="252.5" y1="0" x2="252.5" y2="506"/>
+        <line x1="505" y1="0" x2="505" y2="506"/>
+        <line x1="757.5" y1="0" x2="757.5" y2="506"/>
       </g>
-      <path class="land" d="M 310,80 L 340,70 L 380,72 L 420,80 L 450,95 L 470,115 L 475,140 L 465,165 L 450,175 L 440,200 L 420,215 L 400,225 L 385,240 L 370,255 L 360,270 L 345,280 L 330,275 L 315,260 L 300,245 L 285,230 L 270,215 L 260,200 L 255,180 L 250,160 L 252,140 L 258,120 L 270,100 L 290,88 Z"/>
-      <path class="land" d="M 210,90 L 240,80 L 265,88 L 270,100 L 258,110 L 235,108 L 215,102 Z"/>
-      <path class="land" d="M 430,30 L 480,22 L 520,28 L 535,48 L 530,70 L 510,82 L 485,85 L 460,78 L 440,62 L 430,45 Z"/>
-      <path class="land" d="M 340,280 L 360,270 L 370,285 L 365,305 L 350,315 L 335,305 L 332,290 Z"/>
-      <path class="land" d="M 390,330 L 420,318 L 455,320 L 480,335 L 500,355 L 510,380 L 515,410 L 510,445 L 500,475 L 485,505 L 465,525 L 445,535 L 425,530 L 408,515 L 395,490 L 385,460 L 380,430 L 380,400 L 383,370 Z"/>
-      <path class="land" d="M 880,80 L 920,72 L 960,75 L 990,85 L 1010,100 L 1015,118 L 1005,132 L 990,140 L 975,148 L 955,152 L 935,148 L 915,140 L 898,128 L 885,112 L 878,96 Z"/>
-      <path class="land" d="M 840,145 L 870,135 L 895,140 L 898,158 L 885,175 L 862,180 L 840,168 L 832,155 Z"/>
-      <path class="land" d="M 920,48 L 945,38 L 965,42 L 978,60 L 972,80 L 955,88 L 938,85 L 922,70 L 916,56 Z"/>
-      <path class="land" d="M 878,210 L 920,200 L 960,198 L 1000,205 L 1030,220 L 1048,245 L 1052,275 L 1048,310 L 1038,345 L 1022,380 L 1000,415 L 975,445 L 950,465 L 925,475 L 900,470 L 878,455 L 860,430 L 848,400 L 842,365 L 840,330 L 842,295 L 848,260 L 858,232 Z"/>
-      <path class="land" d="M 1058,370 L 1072,358 L 1082,368 L 1082,395 L 1072,410 L 1058,402 L 1050,385 Z"/>
-      <path class="land" d="M 1090,235 L 1120,228 L 1148,235 L 1162,255 L 1160,280 L 1148,300 L 1125,308 L 1102,300 L 1088,280 L 1085,258 Z"/>
-      <path class="land" d="M 1010,72 L 1060,60 L 1120,52 L 1200,48 L 1280,50 L 1360,55 L 1420,62 L 1470,72 L 1510,85 L 1530,100 L 1528,118 L 1510,132 L 1488,145 L 1462,155 L 1435,162 L 1405,165 L 1375,162 L 1345,158 L 1310,155 L 1275,155 L 1242,158 L 1212,162 L 1185,165 L 1162,168 L 1140,172 L 1115,178 L 1092,185 L 1068,188 L 1048,188 L 1028,182 L 1012,170 L 1005,155 L 1006,138 L 1010,120 L 1010,100 Z"/>
-      <path class="land" d="M 1192,188 L 1222,182 L 1248,188 L 1260,205 L 1262,228 L 1255,255 L 1240,275 L 1220,285 L 1198,278 L 1182,258 L 1178,235 L 1182,210 Z"/>
-      <path class="land" d="M 1390,168 L 1425,162 L 1450,170 L 1460,190 L 1452,210 L 1432,222 L 1408,218 L 1390,205 L 1385,188 Z"/>
-      <path class="land" d="M 1455,248 L 1488,238 L 1510,248 L 1515,270 L 1505,292 L 1480,300 L 1458,290 L 1448,270 L 1450,252 Z"/>
-      <path class="land" d="M 1495,540 L 1540,525 L 1590,522 L 1638,528 L 1678,542 L 1708,562 L 1722,588 L 1720,618 L 1705,645 L 1680,665 L 1648,678 L 1612,682 L 1575,678 L 1540,665 L 1510,645 L 1490,618 L 1482,588 L 1485,560 Z"/>
-      <path class="land" d="M 1310,98 L 1375,88 L 1440,88 L 1488,95 L 1510,110 L 1505,130 L 1488,145 L 1462,155 L 1430,162 L 1390,165 L 1350,162 L 1310,155 L 1278,152 L 1252,158 L 1235,172 L 1218,185 L 1195,188 L 1172,185 L 1152,178 L 1135,165 L 1128,148 L 1135,132 L 1155,120 L 1185,110 L 1225,102 L 1268,96 Z"/>
-      <path class="land" d="M 778,62 L 806,52 L 828,58 L 832,75 L 815,88 L 790,88 L 774,76 Z"/>
+      <!-- NORTH AMERICA -->
+      <path class="land" d="M 96,42 L 108,38 L 118,35 L 130,34 L 140,36 L 148,40 L 152,46 L 150,52 L 142,56 L 132,58 L 120,56 L 110,52 L 100,48 Z"/>
+      <path class="land" d="M 60,58 L 72,52 L 82,50 L 90,52 L 94,58 L 90,64 L 80,66 L 68,64 Z"/>
+      <path class="land" d="M 42,76 L 55,68 L 68,64 L 80,66 L 90,72 L 96,80 L 98,90 L 94,100 L 86,108 L 76,114 L 64,116 L 52,112 L 44,104 L 38,94 L 38,84 Z"/>
+      <path class="land" d="M 98,66 L 108,60 L 120,58 L 130,60 L 138,66 L 140,74 L 134,80 L 122,82 L 110,78 L 102,72 Z"/>
+      <!-- Alaska -->
+      <path class="land" d="M 26,72 L 34,66 L 42,64 L 50,66 L 54,72 L 50,78 L 40,80 L 30,78 Z"/>
+      <path class="land" d="M 8,82 L 18,76 L 26,76 L 30,82 L 26,88 L 16,88 Z"/>
+      <!-- Main North America -->
+      <path class="land" d="M 54,112 L 68,106 L 82,102 L 96,100 L 108,102 L 118,108 L 126,116 L 130,126 L 132,138 L 128,150 L 120,160 L 110,168 L 98,172 L 86,172 L 74,168 L 64,160 L 56,150 L 52,138 L 50,126 Z"/>
+      <!-- Canada east -->
+      <path class="land" d="M 130,88 L 145,80 L 160,76 L 176,76 L 190,80 L 200,88 L 202,98 L 196,108 L 182,114 L 168,116 L 154,112 L 142,104 L 134,96 Z"/>
+      <!-- Greenland -->
+      <path class="land" d="M 196,28 L 212,22 L 226,20 L 238,22 L 246,30 L 248,40 L 244,50 L 234,56 L 220,58 L 206,54 L 196,44 L 192,34 Z"/>
+      <!-- USA -->
+      <path class="land" d="M 54,170 L 70,164 L 88,162 L 104,162 L 118,166 L 130,172 L 138,182 L 140,192 L 136,202 L 126,210 L 112,214 L 96,214 L 80,210 L 66,202 L 56,192 L 50,182 Z"/>
+      <!-- Mexico -->
+      <path class="land" d="M 60,214 L 76,210 L 90,212 L 100,218 L 104,228 L 100,238 L 90,244 L 78,244 L 66,240 L 58,232 L 56,222 Z"/>
+      <!-- Central America -->
+      <path class="land" d="M 88,244 L 98,242 L 106,246 L 108,254 L 102,260 L 94,260 L 88,256 Z"/>
+      <!-- Caribbean -->
+      <path class="land" d="M 140,214 L 148,210 L 154,214 L 152,220 L 144,220 Z"/>
+      <path class="land" d="M 156,218 L 162,214 L 168,218 L 166,224 L 158,224 Z"/>
+      <!-- South America -->
+      <path class="land" d="M 106,260 L 120,254 L 136,252 L 152,254 L 166,260 L 176,270 L 180,282 L 178,296 L 172,310 L 162,322 L 148,332 L 132,336 L 116,334 L 102,326 L 90,314 L 84,300 L 82,286 L 84,272 Z"/>
+      <!-- South America south -->
+      <path class="land" d="M 116,334 L 130,336 L 142,338 L 150,346 L 148,358 L 140,366 L 128,368 L 116,364 L 108,354 L 108,344 Z"/>
+      <!-- Tierra del Fuego -->
+      <path class="land" d="M 120,366 L 130,364 L 136,370 L 132,376 L 120,376 L 116,370 Z"/>
+
+      <!-- EUROPE -->
+      <!-- Scandinavia -->
+      <path class="land" d="M 468,52 L 478,44 L 490,40 L 502,42 L 510,50 L 508,60 L 498,66 L 486,66 L 474,62 Z"/>
+      <path class="land" d="M 490,66 L 500,62 L 510,64 L 516,72 L 514,82 L 506,88 L 496,88 L 488,80 L 486,72 Z"/>
+      <path class="land" d="M 460,58 L 470,52 L 478,56 L 476,66 L 466,68 L 458,64 Z"/>
+      <!-- Iceland -->
+      <path class="land" d="M 388,62 L 398,56 L 408,56 L 416,62 L 412,70 L 400,72 L 390,68 Z"/>
+      <!-- British Isles -->
+      <path class="land" d="M 440,88 L 448,82 L 456,82 L 460,88 L 456,96 L 446,98 L 438,94 Z"/>
+      <path class="land" d="M 430,96 L 438,92 L 442,96 L 440,104 L 432,106 L 428,100 Z"/>
+      <!-- Western Europe -->
+      <path class="land" d="M 454,90 L 468,86 L 482,84 L 494,86 L 504,92 L 510,100 L 510,110 L 504,118 L 492,122 L 478,122 L 464,118 L 454,110 L 450,100 Z"/>
+      <!-- Iberian Peninsula -->
+      <path class="land" d="M 444,118 L 456,114 L 468,114 L 476,120 L 476,130 L 468,138 L 456,140 L 444,136 L 438,128 L 438,120 Z"/>
+      <!-- Italy -->
+      <path class="land" d="M 484,116 L 494,112 L 502,116 L 504,126 L 500,136 L 492,140 L 484,136 L 480,126 Z"/>
+      <path class="land" d="M 494,138 L 500,136 L 504,142 L 502,148 L 494,148 L 490,142 Z"/>
+      <!-- Balkans / Eastern Europe -->
+      <path class="land" d="M 506,100 L 524,94 L 540,92 L 554,96 L 562,106 L 560,118 L 550,126 L 536,128 L 520,124 L 508,116 L 504,108 Z"/>
+      <!-- Greece -->
+      <path class="land" d="M 516,128 L 524,124 L 532,128 L 530,136 L 520,138 L 512,134 Z"/>
+
+      <!-- AFRICA -->
+      <path class="land" d="M 448,152 L 466,144 L 484,140 L 504,140 L 522,144 L 538,152 L 550,164 L 556,178 L 556,194 L 550,210 L 538,224 L 520,234 L 500,240 L 480,240 L 460,234 L 444,222 L 434,208 L 430,192 L 430,176 L 434,162 Z"/>
+      <!-- Africa south -->
+      <path class="land" d="M 460,240 L 480,238 L 500,238 L 518,240 L 530,250 L 534,264 L 528,278 L 514,288 L 496,292 L 476,290 L 460,280 L 450,266 L 450,252 Z"/>
+      <!-- Madagascar -->
+      <path class="land" d="M 550,248 L 558,242 L 564,246 L 562,258 L 556,264 L 548,260 L 546,252 Z"/>
+      <!-- Horn of Africa -->
+      <path class="land" d="M 554,188 L 566,182 L 576,182 L 580,190 L 574,198 L 562,200 L 552,196 Z"/>
+
+      <!-- RUSSIA / ASIA north -->
+      <path class="land" d="M 556,52 L 580,42 L 614,36 L 654,32 L 700,30 L 748,30 L 796,32 L 840,36 L 876,42 L 906,50 L 926,60 L 930,72 L 918,82 L 896,90 L 860,96 L 820,100 L 776,102 L 730,100 L 684,96 L 638,90 L 594,82 L 562,72 L 548,62 Z"/>
+      <!-- Siberia islands -->
+      <path class="land" d="M 900,26 L 912,20 L 922,22 L 924,30 L 912,34 L 900,32 Z"/>
+      <path class="land" d="M 856,22 L 866,18 L 874,22 L 870,30 L 858,30 Z"/>
+      <!-- Kamchatka -->
+      <path class="land" d="M 918,78 L 928,70 L 936,72 L 936,84 L 926,90 L 916,86 Z"/>
+      <!-- Japan -->
+      <path class="land" d="M 908,112 L 916,106 L 924,108 L 924,118 L 916,122 L 908,118 Z"/>
+      <path class="land" d="M 896,120 L 904,116 L 910,120 L 908,128 L 900,130 L 894,126 Z"/>
+      <path class="land" d="M 920,98 L 928,94 L 934,98 L 930,106 L 920,106 Z"/>
+
+      <!-- MIDDLE EAST -->
+      <path class="land" d="M 554,136 L 574,128 L 596,124 L 616,124 L 632,130 L 638,140 L 632,150 L 616,156 L 596,158 L 574,154 L 556,146 Z"/>
+      <!-- Arabian Peninsula -->
+      <path class="land" d="M 564,158 L 582,152 L 602,150 L 620,154 L 630,164 L 628,176 L 618,184 L 600,188 L 580,184 L 564,174 L 558,164 Z"/>
+
+      <!-- CENTRAL / SOUTH ASIA -->
+      <path class="land" d="M 614,100 L 644,92 L 678,88 L 714,88 L 748,92 L 776,100 L 796,112 L 804,126 L 798,140 L 782,150 L 760,156 L 732,158 L 702,154 L 674,146 L 650,134 L 630,122 L 616,110 Z"/>
+      <!-- India -->
+      <path class="land" d="M 668,158 L 686,152 L 706,152 L 720,158 L 724,170 L 718,182 L 704,190 L 686,192 L 670,184 L 660,172 L 660,162 Z"/>
+      <!-- Sri Lanka -->
+      <path class="land" d="M 700,194 L 706,190 L 710,194 L 708,200 L 700,200 Z"/>
+
+      <!-- SOUTHEAST ASIA -->
+      <path class="land" d="M 756,140 L 778,134 L 800,132 L 818,136 L 826,146 L 820,156 L 802,162 L 780,162 L 760,156 L 750,148 Z"/>
+      <!-- Indochina -->
+      <path class="land" d="M 800,154 L 816,148 L 828,152 L 830,164 L 820,172 L 804,172 L 794,164 Z"/>
+      <!-- Malay Peninsula -->
+      <path class="land" d="M 810,164 L 820,160 L 826,166 L 820,178 L 810,180 L 804,172 Z"/>
+      <!-- Sumatra -->
+      <path class="land" d="M 788,192 L 808,184 L 824,184 L 832,192 L 826,202 L 806,206 L 788,202 Z"/>
+      <!-- Borneo -->
+      <path class="land" d="M 824,182 L 842,176 L 858,178 L 864,190 L 858,204 L 840,210 L 822,206 L 812,194 Z"/>
+      <!-- Java -->
+      <path class="land" d="M 806,208 L 826,204 L 844,206 L 848,214 L 836,220 L 814,218 L 804,212 Z"/>
+      <!-- Philippines -->
+      <path class="land" d="M 862,152 L 870,146 L 876,150 L 874,160 L 864,164 L 858,158 Z"/>
+      <path class="land" d="M 854,164 L 862,160 L 866,166 L 862,174 L 854,172 Z"/>
+
+      <!-- CHINA / EAST ASIA -->
+      <path class="land" d="M 756,100 L 798,94 L 842,94 L 878,100 L 904,110 L 916,124 L 912,138 L 894,148 L 866,154 L 832,156 L 796,152 L 762,144 L 738,132 L 730,118 L 736,106 Z"/>
+      <!-- Korea -->
+      <path class="land" d="M 890,116 L 900,110 L 908,114 L 906,124 L 896,128 L 888,122 Z"/>
+      <!-- Taiwan -->
+      <path class="land" d="M 888,152 L 894,148 L 898,152 L 896,160 L 888,160 Z"/>
+
+      <!-- AUSTRALIA -->
+      <path class="land" d="M 810,302 L 840,292 L 874,288 L 910,288 L 942,294 L 964,306 L 974,322 L 970,340 L 956,354 L 932,364 L 900,370 L 864,368 L 830,358 L 802,342 L 790,322 L 794,308 Z"/>
+      <!-- Tasmania -->
+      <path class="land" d="M 876,368 L 886,364 L 892,370 L 888,378 L 876,378 L 872,372 Z"/>
+      <!-- New Zealand -->
+      <path class="land" d="M 962,350 L 970,344 L 976,348 L 972,360 L 962,362 L 956,356 Z"/>
+      <path class="land" d="M 956,362 L 964,358 L 968,364 L 964,374 L 954,374 L 950,368 Z"/>
+      <!-- New Guinea -->
+      <path class="land" d="M 852,262 L 876,256 L 900,256 L 914,264 L 912,276 L 894,282 L 868,280 L 848,272 Z"/>
+
+      <!-- CANADA extra detail -->
+      <path class="land" d="M 160,88 L 185,78 L 210,74 L 238,74 L 260,80 L 272,92 L 268,106 L 250,114 L 224,118 L 196,114 L 172,106 L 158,96 Z"/>
+      <!-- Baffin -->
+      <path class="land" d="M 218,46 L 238,38 L 254,38 L 264,48 L 258,60 L 240,64 L 220,60 L 210,52 Z"/>
     </svg>
   </div>
   <div id="map-visitor-list"></div>
@@ -763,8 +878,27 @@ function flappyEnd(){
 flappyInit();flapDraw();
 
 // ══ WORLD MAP ══
+// Map uses equirectangular projection, viewBox 1010x506
+function lonLatToSvgPct(lon,lat){
+  return {
+    x: ((lon + 180) / 360) * 100,
+    y: ((90 - lat) / 180) * 100
+  };
+}
 var cityCoords={"Berlin":{lon:13.4,lat:52.5},"Hamburg":{lon:10.0,lat:53.6},"M\u00fcnchen":{lon:11.6,lat:48.1},"Frankfurt":{lon:8.7,lat:50.1},"K\u00f6ln":{lon:6.9,lat:50.9},"Stuttgart":{lon:9.2,lat:48.8},"Paris":{lon:2.3,lat:48.9},"Lyon":{lon:4.8,lat:45.7},"Marseille":{lon:5.4,lat:43.3},"London":{lon:-0.1,lat:51.5},"Manchester":{lon:-2.2,lat:53.5},"Edinburgh":{lon:-3.2,lat:55.9},"Amsterdam":{lon:4.9,lat:52.4},"Rotterdam":{lon:4.5,lat:51.9},"Br\u00fcssel":{lon:4.4,lat:50.8},"Madrid":{lon:-3.7,lat:40.4},"Barcelona":{lon:2.2,lat:41.4},"Sevilla":{lon:-6.0,lat:37.4},"Lissabon":{lon:-9.1,lat:38.7},"Porto":{lon:-8.6,lat:41.2},"Rom":{lon:12.5,lat:41.9},"Mailand":{lon:9.2,lat:45.5},"Neapel":{lon:14.3,lat:40.8},"Wien":{lon:16.4,lat:48.2},"Graz":{lon:15.4,lat:47.1},"Salzburg":{lon:13.0,lat:47.8},"Z\u00fcrich":{lon:8.5,lat:47.4},"Genf":{lon:6.1,lat:46.2},"Basel":{lon:7.6,lat:47.6},"Stockholm":{lon:18.1,lat:59.3},"G\u00f6teborg":{lon:12.0,lat:57.7},"Oslo":{lon:10.7,lat:59.9},"Bergen":{lon:5.3,lat:60.4},"Kopenhagen":{lon:12.6,lat:55.7},"Warschau":{lon:21.0,lat:52.2},"Krakau":{lon:20.0,lat:50.1},"Prag":{lon:14.4,lat:50.1},"Budapest":{lon:19.0,lat:47.5},"Bukarest":{lon:26.1,lat:44.4},"Kiew":{lon:30.5,lat:50.5},"Moskau":{lon:37.6,lat:55.8},"St. Petersburg":{lon:30.3,lat:59.9},"Istanbul":{lon:29.0,lat:41.0},"Athen":{lon:23.7,lat:37.9},"Helsinki":{lon:25.0,lat:60.2},"Riga":{lon:24.1,lat:56.9},"Tallinn":{lon:24.7,lat:59.4},"Vilnius":{lon:25.3,lat:54.7},"Zagreb":{lon:16.0,lat:45.8},"Belgrad":{lon:20.5,lat:44.8},"Lubliana":{lon:14.5,lat:46.1},"Reykjavik":{lon:-22.0,lat:64.1},"New York":{lon:-74.0,lat:40.7},"Los Angeles":{lon:-118.2,lat:34.1},"Chicago":{lon:-87.6,lat:41.9},"Houston":{lon:-95.4,lat:29.8},"Miami":{lon:-80.2,lat:25.8},"San Francisco":{lon:-122.4,lat:37.8},"Seattle":{lon:-122.3,lat:47.6},"Las Vegas":{lon:-115.1,lat:36.2},"Boston":{lon:-71.1,lat:42.4},"Washington":{lon:-77.0,lat:38.9},"Atlanta":{lon:-84.4,lat:33.7},"Dallas":{lon:-96.8,lat:32.8},"Toronto":{lon:-79.4,lat:43.7},"Montreal":{lon:-73.6,lat:45.5},"Vancouver":{lon:-123.1,lat:49.3},"Mexico City":{lon:-99.1,lat:19.4},"Guadalajara":{lon:-103.3,lat:20.7},"S\u00e3o Paulo":{lon:-46.6,lat:-23.5},"Rio de Janeiro":{lon:-43.2,lat:-22.9},"Bras\u00edlia":{lon:-47.9,lat:-15.8},"Buenos Aires":{lon:-58.4,lat:-34.6},"Bogot\u00e1":{lon:-74.1,lat:4.7},"Lima":{lon:-77.0,lat:-12.0},"Santiago":{lon:-70.7,lat:-33.5},"Caracas":{lon:-66.9,lat:10.5},"Quito":{lon:-78.5,lat:-0.2},"Havanna":{lon:-82.4,lat:23.1},"Kairo":{lon:31.2,lat:30.1},"Casablanca":{lon:-7.6,lat:33.6},"Tunis":{lon:10.2,lat:36.8},"Algier":{lon:3.1,lat:36.7},"Lagos":{lon:3.4,lat:6.5},"Accra":{lon:-0.2,lat:5.6},"Dakar":{lon:-17.4,lat:14.7},"Nairobi":{lon:36.8,lat:-1.3},"Addis Abeba":{lon:38.7,lat:9.0},"Kapstadt":{lon:18.4,lat:-33.9},"Johannesburg":{lon:28.0,lat:-26.2},"Dar es Salaam":{lon:39.3,lat:-6.8},"Kinshasa":{lon:15.3,lat:-4.3},"Luanda":{lon:13.2,lat:-8.8},"Khartoum":{lon:32.5,lat:15.6},"Tokio":{lon:139.7,lat:35.7},"Osaka":{lon:135.5,lat:34.7},"Kyoto":{lon:135.8,lat:35.0},"Seoul":{lon:126.9,lat:37.6},"Busan":{lon:129.1,lat:35.1},"Peking":{lon:116.4,lat:39.9},"Shanghai":{lon:121.5,lat:31.2},"Guangzhou":{lon:113.3,lat:23.1},"Shenzhen":{lon:114.1,lat:22.5},"Hongkong":{lon:114.2,lat:22.3},"Taipei":{lon:121.6,lat:25.0},"Singapur":{lon:103.8,lat:1.4},"Kuala Lumpur":{lon:101.7,lat:3.1},"Bangkok":{lon:100.5,lat:13.8},"Jakarta":{lon:106.8,lat:-6.2},"Manila":{lon:121.0,lat:14.6},"Ho-Chi-Minh-Stadt":{lon:106.7,lat:10.8},"Hanoi":{lon:105.8,lat:21.0},"Yangon":{lon:96.1,lat:16.9},"Phnom Penh":{lon:104.9,lat:11.6},"Mumbai":{lon:72.9,lat:19.1},"Delhi":{lon:77.2,lat:28.6},"Bangalore":{lon:77.6,lat:12.9},"Chennai":{lon:80.3,lat:13.1},"Colombo":{lon:79.9,lat:6.9},"Karachi":{lon:67.0,lat:24.9},"Lahore":{lon:74.3,lat:31.5},"Dhaka":{lon:90.4,lat:23.7},"Dubai":{lon:55.3,lat:25.2},"Abu Dhabi":{lon:54.4,lat:24.5},"Doha":{lon:51.5,lat:25.3},"Riad":{lon:46.7,lat:24.7},"Tel Aviv":{lon:34.8,lat:32.1},"Amman":{lon:35.9,lat:31.9},"Bagdad":{lon:44.4,lat:33.3},"Teheran":{lon:51.4,lat:35.7},"Ankara":{lon:32.9,lat:39.9},"Taschkent":{lon:69.2,lat:41.3},"Almaty":{lon:76.9,lat:43.3},"Sydney":{lon:151.2,lat:-33.9},"Melbourne":{lon:144.9,lat:-37.8},"Brisbane":{lon:153.0,lat:-27.5},"Perth":{lon:115.9,lat:-31.9},"Auckland":{lon:174.8,lat:-36.9},"Wellington":{lon:174.8,lat:-41.3}};
-function lonLatToSvgPct(lon,lat){return{x:((lon+180)/360)*100,y:((90-lat)/180)*100};}
+
+// ── Online presence counter ──
+var presenceRef = db.ref("presence");
+var myPresenceRef = presenceRef.push();
+myPresenceRef.set(true);
+myPresenceRef.onDisconnect().remove();
+presenceRef.on("value", function(snap){
+  var count = 0;
+  snap.forEach(function(){ count++; });
+  var el = document.getElementById("online-count");
+  if(el) el.textContent = count;
+});
+
 var visitorsRef=db.ref("visitors");
 visitorsRef.on("value",function(snap){
   var v=[];snap.forEach(function(c){v.push(c.val());});renderVisitors(v);
@@ -854,25 +988,20 @@ document.getElementById("difficulty").addEventListener("change", function(){
   if (idx !== undefined) flagLBGoTo(idx);
 });
 
-// ══ SHAKE TO CONFETTI ══
+// ══ TWO-FINGER DOUBLE-TAP → CONFETTI ══
 (function(){
-  if (!window.DeviceMotionEvent) return;
-  var lastShake = 0;
-  var lastX, lastY, lastZ;
-  window.addEventListener("devicemotion", function(e){
-    var acc = e.accelerationIncludingGravity;
-    if (!acc) return;
-    if (lastX === undefined) { lastX = acc.x; lastY = acc.y; lastZ = acc.z; return; }
-    var delta = Math.abs(acc.x - lastX) + Math.abs(acc.y - lastY) + Math.abs(acc.z - lastZ);
-    lastX = acc.x; lastY = acc.y; lastZ = acc.z;
-    if (delta > 30) {
+  var lastTwoFingerTap = 0;
+  document.addEventListener("touchend", function(e){
+    if(e.changedTouches.length >= 2){
       var now = Date.now();
-      if (now - lastShake > 1500) {
-        lastShake = now;
+      if(now - lastTwoFingerTap < 400){
+        lastTwoFingerTap = 0;
         startConfetti();
+      } else {
+        lastTwoFingerTap = now;
       }
     }
-  });
+  }, {passive:true});
 })();
 
 // ══ DOUBLE-TAP LOGO → DEV MENU (mobile touch) ══
